@@ -13,6 +13,14 @@ class Settings(BaseSettings):
     clinician_model: str | None = None
     scribe_model: str | None = None
 
+    # API keys
+    openai_api_key: str | None = None
+    anthropic_api_key: str | None = None
+
+    # Local model endpoints
+    ollama_base_url: str = "http://localhost:11434/v1"
+    vllm_base_url: str = "http://localhost:8000/v1"
+
     output_dir: str = "output"
     log_level: str = "INFO"
     max_retries: int = 3
