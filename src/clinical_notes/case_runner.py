@@ -1,6 +1,7 @@
 import logging
 
 from .agents import ClinicianAgent, CoordinatorAgent, NarratorAgent, OrchestratorAgent, ScribeAgent
+from .io import remove_partial, save_partial_case
 from .models.case import CaseConfig
 from .models.patient import MedicalHistorySummary, PatientDemographics
 from .models.timeline import Timeline
@@ -18,7 +19,7 @@ class CaseRunner:
         self.clinician = ClinicianAgent()
         self.scribe = ScribeAgent()
 
-    async def generate_case(self, config: CaseConfig) -> dict:
+    async def generate_case(self, config: CaseConfig, output_dir: str | None = None) -> dict:
         """Run the full pipeline for a single case. Returns serializable dict."""
         cv = config.clinical_variables
 
@@ -47,29 +48,56 @@ class CaseRunner:
                 len(timeline.visits),
             )
 
-            # Coordinator filters rich visit data (has diagnosis access, strips it)
-            assignment = await self.coordinator.run(
-                primary_condition=cv.primary_condition,
-                visit=visit,
-                medical_history=medical_history,
-            )
+            try:
+                # Coordinator filters rich visit data (has diagnosis access, strips it)
+                assignment = await self.coordinator.run(
+                    primary_condition=cv.primary_condition,
+                    visit=visit,
+                    medical_history=medical_history,
+                )
 
-            # Clinician writes note (no diagnosis access)
-            note = await self.clinician.run(assignment, medical_history)
-            note.visit_number = visit.visit_number
-            note.clinician_specialty = visit.clinician_specialty
-            note.note_date = visit.visit_date
+                # Clinician writes note (no diagnosis access)
+                note = await self.clinician.run(assignment, medical_history)
+                note.visit_number = visit.visit_number
+                note.clinician_specialty = visit.clinician_specialty
+                note.note_date = visit.visit_date
 
-            # Store note on the visit and collect it
-            visit.note = note.content
-            notes.append(note)
+                # Store note on the visit and collect it
+                visit.note = note.content
+                notes.append(note)
 
-            # Scribe updates medical history for subsequent visits
-            medical_history = await self.scribe.run(medical_history, note, visit)
+                # Scribe updates medical history for subsequent visits
+                medical_history = await self.scribe.run(medical_history, note, visit)
+            except Exception:
+                logger.error(
+                    "Case %s: Failed on visit %d/%d. Partial progress saved.",
+                    config.case_id,
+                    visit.visit_number,
+                    len(timeline.visits),
+                )
+                raise
+
+            # Save progress after each successful visit
+            self._save_progress(config, timeline, notes, medical_history, output_dir)
+
+        # All visits complete — remove partial file
+        remove_partial(config.case_id, output_dir)
 
         logger.info("Case %s: Complete (%d visits)", config.case_id, len(notes))
 
         return _serialize_case(config, timeline, notes, medical_history)
+
+    def _save_progress(
+        self,
+        config: CaseConfig,
+        timeline: Timeline,
+        notes: list,
+        medical_history: MedicalHistorySummary,
+        output_dir: str | None,
+    ) -> None:
+        """Write a partial case JSON after each successful visit."""
+        case = _serialize_case(config, timeline, notes, medical_history)
+        save_partial_case(case, output_dir)
 
 
 def _serialize_case(
