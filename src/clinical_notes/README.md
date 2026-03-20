@@ -131,11 +131,13 @@ Each line contains all `ClinicalNote` fields plus `case_id`, `difficulty`, and `
 
 The `build_case.py` script outputs a `CaseConfig` as JSON. This is the input to the note generation pipeline, not a final output — it contains no narrative, timeline, or notes yet.
 
+The `primary_condition` field is derived by the Constructor from the interpreted coded variables — it is not provided directly by the user. For example, given NAACCR codes `Primary Site=C34.1` and `Histologic Type=8070/3`, the pipeline might produce:
+
 ```json
 {
   "case_id": "f9e8d7c6",
   "clinical_variables": {
-    "primary_condition": "Non-Small Cell Lung Cancer - Adenocarcinoma, Stage IIIA",
+    "primary_condition": "Squamous Cell Carcinoma of the Upper Lobe of the Lung",
     "comorbidities": ["COPD", "Hypertension"],
     "age": 67,
     "sex": "M",

@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     coordinator_model: str | None = None
     clinician_model: str | None = None
     scribe_model: str | None = None
+    constructor_model: str | None = None
+    investigator_model: str | None = None
+
+    # Knowledge source settings
+    knowledge_source_max_chars: int = 10000
 
     # API keys
     openai_api_key: str | None = None

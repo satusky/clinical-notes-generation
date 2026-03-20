@@ -6,7 +6,7 @@ A multi-agent framework for generating synthetic clinical notes datasets. The sy
 
 The project has two phases:
 
-1. **Case Building** — Takes a minimal seed (e.g. a condition name) and constructs a fully populated case configuration by decomposing the condition into clinical variables and researching each one via parallel investigator agents. See [CASE_BUILDING.md](CASE_BUILDING.md).
+1. **Case Building** — Takes raw coded variables (e.g. NAACCR codes) and knowledge source documents (e.g. coding manuals), interprets each code via parallel investigator agents, and synthesizes a fully populated case configuration. See [CASE_BUILDING.md](CASE_BUILDING.md).
 
 2. **Note Generation** — Takes a case configuration and generates a series of clinical notes through a multi-agent pipeline that maintains an information barrier (the note-writing clinician does not know the diagnosis). See [AGENT_FRAMEWORK.md](AGENT_FRAMEWORK.md).
 
@@ -32,22 +32,26 @@ OPENAI_API_KEY=sk-...
 
 ## Usage
 
-### Build a case from a condition
+### Build a case from coded variables
 
 ```bash
 uv run python scripts/build_case.py \
-  --condition "Stage III Non-Small Cell Lung Cancer" \
+  --var "Primary Site=C34.1" \
+  --var "Histologic Type=8070/3" \
+  --var "Grade=2" \
+  --coding-system NAACCR \
+  --source /path/to/naaccr_docs/ \
   --difficulty hard \
   --case-type chronic \
   --outcome worsening
 ```
 
-Optional flags: `--age`, `--sex`, `--source` (repeatable — accepts URLs or file/directory paths), `--output`.
+Optional flags: `--age`, `--sex`, `--variables-file` (JSON dict), `--source` (repeatable — accepts URLs or file/directory paths), `--output`.
 
-### Generate clinical notes from a seed
+### Generate clinical notes from a seed file
 
 ```bash
-uv run python scripts/generate.py --seed "Stage III Non-Small Cell Lung Cancer"
+uv run python scripts/generate.py --seed-file seed.json
 ```
 
 ### Generate clinical notes from the built-in example case
@@ -62,8 +66,8 @@ uv run python scripts/generate.py
 
 | Agent | Role |
 |-------|------|
-| **Constructor** | Decomposes a condition into variables, dispatches investigators, merges results into a `CaseConfig` |
-| **Investigator** | Researches a single clinical variable, optionally using knowledge sources |
+| **Constructor** | Assigns investigators to interpret coded variables, dispatches them, merges results into a `CaseConfig` |
+| **Investigator** | Interprets a single coded variable, consulting knowledge sources |
 | **Narrator** | Writes a disease progression narrative from clinical variables |
 | **Orchestrator** | Builds a visit timeline with rich clinical detail |
 | **Coordinator** | Strips diagnosis references from visit data before passing to the Clinician |

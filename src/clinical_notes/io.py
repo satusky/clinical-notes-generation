@@ -41,7 +41,7 @@ def save_notes_jsonl(cases: list[dict], output_dir: str | None = None) -> Path:
     out = Path(output_dir or settings.output_dir)
     out.mkdir(parents=True, exist_ok=True)
     path = out / "notes.jsonl"
-    with path.open("w") as f:
+    with path.open("a") as f:
         for case in cases:
             for note in case.get("notes", []):
                 record = {
