@@ -46,6 +46,9 @@ class VariableAssignment(BaseModel):
     relevant_sources: list[int] = Field(
         default_factory=list, description="Indices into the seed's knowledge_sources list"
     )
+    raw_variables: dict[str, str] | None = Field(
+        default=None, description="All raw variables from the seed, for cross-reference"
+    )
 
 
 class InvestigationPlan(BaseModel):

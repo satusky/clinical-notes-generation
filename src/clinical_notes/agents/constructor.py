@@ -38,6 +38,10 @@ class ConstructorAgent(BaseAgent):
             plan.suggested_sex,
         )
 
+        # Inject raw_variables into each assignment for cross-reference
+        for var in plan.variables:
+            var.raw_variables = seed.raw_variables
+
         # Step 2: Investigate — fan out investigators concurrently
         investigator = InvestigatorAgent()
         semaphore = asyncio.Semaphore(5)
