@@ -6,6 +6,7 @@ Supports providers: openai/, anthropic/, ollama/, vllm/
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, TypeVar
 
 from pydantic import BaseModel
@@ -111,4 +112,42 @@ async def generate_structured(
             response_model,
             settings.max_retries,
             supports_json_schema=supports_json_schema,
+        )
+
+
+async def generate_with_tools(
+    system_prompt: str,
+    user_prompt: str,
+    tools: list[dict],
+    tool_executors: dict[str, Callable],
+    response_model: type[T],
+    model: str | None = None,
+    max_iterations: int = 10,
+) -> T:
+    """Run an agentic tool-use loop, returning a structured response.
+
+    Currently only supported for Anthropic models.
+    """
+    model = model or settings.default_model
+    provider, model_name = parse_model(model)
+
+    if provider == Provider.ANTHROPIC:
+        from . import _anthropic
+
+        client = _get_anthropic_client()
+        return await _anthropic.generate_with_tools(
+            client,
+            model_name,
+            system_prompt,
+            user_prompt,
+            tools,
+            tool_executors,
+            response_model,
+            settings.max_retries,
+            max_iterations=max_iterations,
+        )
+    else:
+        raise NotImplementedError(
+            f"generate_with_tools is not supported for provider '{provider.value}'. "
+            "Use generate_structured as a fallback."
         )
