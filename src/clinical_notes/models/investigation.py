@@ -24,7 +24,7 @@ class CaseSeed(BaseModel):
     coding_system: str | None = Field(
         default=None, description="Label for the coding system (e.g. NAACCR, ICD-10)"
     )
-    age: int | None = Field(default=None, ge=0, le=120, description="Patient age (optional)")
+    age: int | None = Field(default=None, ge=18, le=100, description="Patient age (optional)")
     sex: str | None = Field(default=None, description="Patient sex M/F (optional)")
     difficulty: str = Field(default="medium", description="easy, medium, or hard")
     case_type: str = Field(default="acute", description="acute or chronic")
@@ -55,7 +55,7 @@ class InvestigationPlan(BaseModel):
     """The Constructor's plan for decomposing a condition into variables."""
 
     variables: list[VariableAssignment] = Field(description="Variables to investigate")
-    suggested_age: int = Field(ge=0, le=120, description="Suggested patient age")
+    suggested_age: int = Field(ge=18, le=100, description="Suggested patient age")
     suggested_sex: str = Field(description="Suggested patient sex (M/F)")
 
 

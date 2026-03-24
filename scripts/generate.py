@@ -5,6 +5,8 @@ import asyncio
 import logging
 import sys
 import uuid
+import os
+import glob
 
 from src.clinical_notes.case_runner import CaseRunner
 from src.clinical_notes.config import settings
@@ -47,12 +49,12 @@ EXAMPLE_CASE = CaseConfig(
 )
 
 
-async def run(args: argparse.Namespace):
+async def run(seed_file: str | None = None, output: str | None = None):
     logging.basicConfig(level=getattr(logging, settings.log_level))
 
     runner = CaseRunner()
 
-    if args.seed_file:
+    if seed_file:
         # Build a CaseConfig from a seed file via the case-building pipeline
         import json
         from pathlib import Path
@@ -60,9 +62,12 @@ async def run(args: argparse.Namespace):
         from src.clinical_notes.case_builder import CaseBuilder
         from src.clinical_notes.models.investigation import CaseSeed
 
-        seed_data = json.loads(Path(args.seed_file).read_text())
-        seed = CaseSeed(**seed_data)
-        config = await CaseBuilder().build_case(seed)
+        seed_data = json.loads(Path(seed_file).read_text())
+        if "raw_variables" in seed_data:
+            seed = CaseSeed(**seed_data)
+            config = await CaseBuilder().build_case(seed)
+        else:
+            config = CaseConfig(**seed_data)
     else:
         config = EXAMPLE_CASE
 
@@ -70,8 +75,8 @@ async def run(args: argparse.Namespace):
     case = await runner.generate_case(config)
 
     # Save outputs
-    save_case_json(case, args.output)
-    save_notes_jsonl([case], args.output)
+    save_case_json(case, output)
+    save_notes_jsonl([case], output)
 
     print(f"Case {case['case_id']} generated with {len(case['notes'])} notes.")
 
@@ -81,8 +86,18 @@ def main():
     parser.add_argument("--output", "-o", default=None, help="Output directory")
     parser.add_argument("--seed-file", default=None,
                         help="Path to a JSON file containing CaseSeed fields")
+    parser.add_argument("--seed-dir", default=None,
+                        help="Path to a directory containing seed files")
     args = parser.parse_args()
-    asyncio.run(run(args))
+    output_dir = args.output
+
+    if args.seed_dir is not None:
+        seed_files = glob.glob(os.path.join(args.seed_dir, "*_seed*.json"))
+    else:
+        seed_files = [args.seed_file]
+    
+    for seed_file in seed_files:
+        asyncio.run(run(seed_file, output_dir))
 
 
 if __name__ == "__main__":
