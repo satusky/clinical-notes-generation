@@ -52,7 +52,7 @@ Allergies: {allergies_str}
 Prior visit summaries:
 {summaries_str}
 
-Generate a VisitAssignment JSON. You must:
+Generate a VisitAssignment. You must:
 - Strip any mention of "{primary_condition}" from visit_scenario, symptoms, reason_for_visit, \
 examination_findings, test_results, treatments_administered, patient_response, relevant_history
 - Do NOT include disease_progression_notes

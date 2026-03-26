@@ -73,7 +73,7 @@ synthesize "Squamous Cell Carcinoma of the Upper Lobe of the Lung")
 - Ensure the final case matches the specified difficulty, case type, and intended outcome
 - Produce realistic comorbidities and risk factors appropriate for the demographics
 
-The output must be a valid CaseConfig with all required fields populated.
+The output must be a CaseConfig with all required fields populated.
 """
 
 

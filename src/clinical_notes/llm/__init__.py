@@ -103,7 +103,6 @@ async def generate_structured(
         from . import _openai
 
         client = _get_openai_client(provider)
-        supports_json_schema = provider != Provider.OLLAMA
         return await _openai.generate_structured(
             client,
             model_name,
@@ -111,7 +110,6 @@ async def generate_structured(
             user_prompt,
             response_model,
             settings.max_retries,
-            supports_json_schema=supports_json_schema,
         )
 
 
@@ -126,7 +124,9 @@ async def generate_with_tools(
 ) -> T:
     """Run an agentic tool-use loop, returning a structured response.
 
-    Currently only supported for Anthropic models.
+    Supported for all providers. Tool schemas use Anthropic format
+    (input_schema) as canonical; converted to OpenAI format for
+    non-Anthropic providers.
     """
     model = model or settings.default_model
     provider, model_name = parse_model(model)
@@ -147,7 +147,17 @@ async def generate_with_tools(
             max_iterations=max_iterations,
         )
     else:
-        raise NotImplementedError(
-            f"generate_with_tools is not supported for provider '{provider.value}'. "
-            "Use generate_structured as a fallback."
+        from . import _openai
+
+        client = _get_openai_client(provider)
+        return await _openai.generate_with_tools(
+            client,
+            model_name,
+            system_prompt,
+            user_prompt,
+            tools,
+            tool_executors,
+            response_model,
+            settings.max_retries,
+            max_iterations=max_iterations,
         )

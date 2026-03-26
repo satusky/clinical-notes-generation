@@ -1,3 +1,4 @@
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -116,13 +117,14 @@ async def test_generate_structured_dispatches_to_openai():
         result = await generate_structured("sys", "user", SampleModel, model="openai/gpt-4o")
         assert result.name == "test"
         mock_gen.assert_called_once()
-        # Should pass supports_json_schema=True for OpenAI
+        # No supports_json_schema kwarg should be passed
         kwargs = mock_gen.call_args[1]
-        assert kwargs["supports_json_schema"] is True
+        assert "supports_json_schema" not in kwargs
 
 
 @pytest.mark.asyncio
-async def test_generate_structured_ollama_no_json_schema():
+async def test_generate_structured_ollama_uses_tool_calling():
+    """Ollama now uses the same tool-calling path as OpenAI."""
     with (
         patch(
             "src.clinical_notes.llm._openai.generate_structured", new_callable=AsyncMock
@@ -133,9 +135,28 @@ async def test_generate_structured_ollama_no_json_schema():
         from src.clinical_notes.llm import generate_structured
 
         await generate_structured("sys", "user", SampleModel, model="ollama/llama3")
-        # Should pass supports_json_schema=False for Ollama
+        # No supports_json_schema kwarg
         kwargs = mock_gen.call_args[1]
-        assert kwargs["supports_json_schema"] is False
+        assert "supports_json_schema" not in kwargs
+
+
+@pytest.mark.asyncio
+async def test_generate_with_tools_dispatches_to_openai():
+    """Non-Anthropic providers now route to _openai.generate_with_tools."""
+    with (
+        patch(
+            "src.clinical_notes.llm._openai.generate_with_tools", new_callable=AsyncMock
+        ) as mock_gen,
+        patch("src.clinical_notes.llm._get_openai_client"),
+    ):
+        mock_gen.return_value = SampleModel(name="test", value=1)
+        from src.clinical_notes.llm import generate_with_tools
+
+        result = await generate_with_tools(
+            "sys", "user", [], {}, SampleModel, model="openai/gpt-4o"
+        )
+        assert result.name == "test"
+        mock_gen.assert_called_once()
 
 
 # --- Provider-level tests ---
@@ -195,47 +216,191 @@ async def test_openai_generate():
 
 
 @pytest.mark.asyncio
-async def test_openai_structured_json_schema():
+async def test_openai_structured_tool_calling():
+    """OpenAI structured output uses tool calling (not response_format)."""
     from src.clinical_notes.llm import _openai
 
     mock_client = AsyncMock()
     mock_response = MagicMock()
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.arguments = '{"name": "test", "value": 42}'
     mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = '{"name": "test", "value": 42}'
+    mock_response.choices[0].message.tool_calls = [mock_tool_call]
     mock_client.chat.completions.create.return_value = mock_response
 
     result = await _openai.generate_structured(
-        mock_client, "gpt-4o", "sys", "user", SampleModel, 3, supports_json_schema=True
+        mock_client, "gpt-4o", "sys", "user", SampleModel, 3
     )
     assert isinstance(result, SampleModel)
     assert result.name == "test"
+    assert result.value == 42
 
     call_kwargs = mock_client.chat.completions.create.call_args[1]
-    assert call_kwargs["response_format"]["type"] == "json_schema"
-    assert call_kwargs["response_format"]["json_schema"]["name"] == "SampleModel"
+    # Verify tool calling format
+    assert "tools" in call_kwargs
+    tool = call_kwargs["tools"][0]
+    assert tool["type"] == "function"
+    assert tool["function"]["name"] == "extract_SampleModel"
+    # Verify tool_choice forces the extraction tool
+    assert call_kwargs["tool_choice"] == {
+        "type": "function",
+        "function": {"name": "extract_SampleModel"},
+    }
+    # No response_format should be set
+    assert "response_format" not in call_kwargs
 
 
 @pytest.mark.asyncio
-async def test_openai_structured_ollama_fallback():
+async def test_openai_generate_with_tools_extraction():
+    """OpenAI generate_with_tools returns result when extraction tool is called."""
     from src.clinical_notes.llm import _openai
 
     mock_client = AsyncMock()
+
+    # Model calls the extraction tool directly
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "extract_SampleModel"
+    mock_tool_call.function.arguments = '{"name": "result", "value": 99}'
+    mock_tool_call.id = "call_1"
+
     mock_response = MagicMock()
+    mock_message = MagicMock()
+    mock_message.tool_calls = [mock_tool_call]
     mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = '{"name": "test", "value": 42}'
+    mock_response.choices[0].message = mock_message
     mock_client.chat.completions.create.return_value = mock_response
 
-    result = await _openai.generate_structured(
-        mock_client, "llama3", "sys", "user", SampleModel, 3, supports_json_schema=False
+    result = await _openai.generate_with_tools(
+        mock_client,
+        "gpt-4o",
+        "sys",
+        "user",
+        tools=[],
+        tool_executors={},
+        response_model=SampleModel,
+        max_retries=3,
     )
     assert isinstance(result, SampleModel)
+    assert result.name == "result"
+    assert result.value == 99
 
-    call_kwargs = mock_client.chat.completions.create.call_args[1]
-    assert call_kwargs["response_format"] == {"type": "json_object"}
-    # Schema should be injected into system prompt
-    sys_msg = call_kwargs["messages"][0]["content"]
-    assert "JSON" in sys_msg
-    assert "SampleModel" not in call_kwargs.get("response_format", {}).get("json_schema", {})
+
+@pytest.mark.asyncio
+async def test_openai_generate_with_tools_investigation_then_extraction():
+    """OpenAI generate_with_tools executes investigation tools, then extracts."""
+    from src.clinical_notes.llm import _openai
+
+    mock_client = AsyncMock()
+
+    # First call: model calls an investigation tool
+    investigate_call = MagicMock()
+    investigate_call.function.name = "lookup"
+    investigate_call.function.arguments = '{"key": "abc"}'
+    investigate_call.id = "call_inv"
+
+    response_1 = MagicMock()
+    msg_1 = MagicMock()
+    msg_1.tool_calls = [investigate_call]
+    response_1.choices = [MagicMock()]
+    response_1.choices[0].message = msg_1
+
+    # Second call: model calls extraction tool
+    extract_call = MagicMock()
+    extract_call.function.name = "extract_SampleModel"
+    extract_call.function.arguments = '{"name": "looked_up", "value": 7}'
+    extract_call.id = "call_ext"
+
+    response_2 = MagicMock()
+    msg_2 = MagicMock()
+    msg_2.tool_calls = [extract_call]
+    response_2.choices = [MagicMock()]
+    response_2.choices[0].message = msg_2
+
+    mock_client.chat.completions.create.side_effect = [response_1, response_2]
+
+    async def fake_lookup(key: str) -> str:
+        return f"found: {key}"
+
+    result = await _openai.generate_with_tools(
+        mock_client,
+        "gpt-4o",
+        "sys",
+        "user",
+        tools=[
+            {
+                "name": "lookup",
+                "description": "Look up a key",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"key": {"type": "string"}},
+                    "required": ["key"],
+                },
+            }
+        ],
+        tool_executors={"lookup": fake_lookup},
+        response_model=SampleModel,
+        max_retries=3,
+    )
+    assert result.name == "looked_up"
+    assert result.value == 7
+
+    # Verify tool result was appended to messages
+    assert mock_client.chat.completions.create.call_count == 2
+    second_call_kwargs = mock_client.chat.completions.create.call_args_list[1][1]
+    messages = second_call_kwargs["messages"]
+    # Should have: system, user, assistant (with tool call), tool result
+    tool_msg = [m for m in messages if isinstance(m, dict) and m.get("role") == "tool"]
+    assert len(tool_msg) == 1
+    assert tool_msg[0]["content"] == "found: abc"
+
+
+@pytest.mark.asyncio
+async def test_openai_generate_with_tools_forced_extraction():
+    """When model stops without tool calls, forces extraction."""
+    from src.clinical_notes.llm import _openai
+
+    mock_client = AsyncMock()
+
+    # First call: no tool calls
+    response_1 = MagicMock()
+    msg_1 = MagicMock()
+    msg_1.tool_calls = None
+    response_1.choices = [MagicMock()]
+    response_1.choices[0].message = msg_1
+
+    # Forced extraction call
+    forced_call = MagicMock()
+    forced_call.function.name = "extract_SampleModel"
+    forced_call.function.arguments = '{"name": "forced", "value": 0}'
+    forced_call.id = "call_forced"
+
+    response_2 = MagicMock()
+    msg_2 = MagicMock()
+    msg_2.tool_calls = [forced_call]
+    response_2.choices = [MagicMock()]
+    response_2.choices[0].message = msg_2
+
+    mock_client.chat.completions.create.side_effect = [response_1, response_2]
+
+    result = await _openai.generate_with_tools(
+        mock_client,
+        "gpt-4o",
+        "sys",
+        "user",
+        tools=[],
+        tool_executors={},
+        response_model=SampleModel,
+        max_retries=3,
+    )
+    assert result.name == "forced"
+    assert result.value == 0
+
+    # Verify forced extraction used tool_choice
+    second_call_kwargs = mock_client.chat.completions.create.call_args_list[1][1]
+    assert second_call_kwargs["tool_choice"] == {
+        "type": "function",
+        "function": {"name": "extract_SampleModel"},
+    }
 
 
 @pytest.mark.asyncio

@@ -105,9 +105,7 @@ def clinician_user_prompt(
         "Prior visit summaries:",
         f"{summaries_str}",
         "",
-        "Write a complete clinical note including your assessment and plan. Respond with a JSON object "
-        "containing: content (the full note text), symptoms_reported, vitals, tests_ordered, "
-        "diagnoses_considered, medications, and follow_up_recommendations.",
+        "Write a complete clinical note including your assessment and plan.",
     ])
 
     return "\n".join(parts)

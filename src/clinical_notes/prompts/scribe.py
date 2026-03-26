@@ -14,7 +14,7 @@ The history summary should reflect objective findings and prescribed treatments,
 clinician's differential diagnosis. This maintains the information barrier — future clinicians \
 should reason independently rather than being anchored by prior differential diagnoses.
 
-Produce a complete, updated MedicalHistorySummary JSON.
+Produce a complete, updated MedicalHistorySummary.
 """
 
 
@@ -39,7 +39,7 @@ Visit details:
 - Specialty: {clinician_specialty}
 - Reason for visit: {reason_for_visit}
 
-Produce an updated MedicalHistorySummary JSON. Remember:
+Produce an updated MedicalHistorySummary. Remember:
 - Do NOT include diagnoses_considered in the visit summary or anywhere in the output
 - Keep the visit summary factual and objective (symptoms, findings, treatments, tests ordered)
 - Preserve all existing history while integrating new information

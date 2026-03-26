@@ -74,4 +74,4 @@ For each visit, provide:
 - patient_response (response to prior treatments)
 - disease_progression_notes (internal tracking of disease state — include diagnosis details)
 
-Create the visit timeline as a JSON object with a "visits" array."""
+Create the visit timeline with a "visits" array."""

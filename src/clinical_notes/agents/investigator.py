@@ -4,7 +4,7 @@ from pathlib import Path
 
 from ..knowledge import KnowledgeLoader
 from ..llm import generate_structured, generate_with_tools
-from ..llm._types import Provider, parse_model
+
 from ..models.investigation import (
     InvestigatorReport,
     KnowledgeSource,
@@ -144,14 +144,6 @@ def _build_tool_executors(allowed_paths: set[str]) -> dict:
 class InvestigatorAgent(BaseAgent):
     agent_name = "investigator"
 
-    def _supports_tools(self) -> bool:
-        """Check if the current model provider supports tool use."""
-        try:
-            provider, _ = parse_model(self.model)
-            return provider == Provider.ANTHROPIC
-        except ValueError:
-            return False
-
     async def run(
         self,
         assignment: VariableAssignment,
@@ -168,8 +160,8 @@ class InvestigatorAgent(BaseAgent):
             knowledge_sources and assignment.relevant_sources
         )
 
-        # Use tool-based path for Anthropic with relevant sources
-        if has_relevant_sources and self._supports_tools():
+        # Use tool-based path when relevant sources are available
+        if has_relevant_sources:
             return await self._run_with_tools(assignment, knowledge_sources)
 
         # Fallback: pre-load sources and use generate_structured

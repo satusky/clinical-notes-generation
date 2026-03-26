@@ -140,7 +140,7 @@ async def test_investigator_without_sources(assignment, mock_report):
 
 @pytest.mark.asyncio
 async def test_investigator_with_sources_non_anthropic(mock_report):
-    """Non-Anthropic model falls back to generate_structured even with sources."""
+    """Non-Anthropic model now uses generate_with_tools when sources are available."""
     assignment = VariableAssignment(
         variable_name="Histologic Type",
         investigation_focus="Look up histology/behavior code 8070/3",
@@ -155,23 +155,20 @@ async def test_investigator_with_sources_non_anthropic(mock_report):
         ),
     ]
     agent = InvestigatorAgent()
-    with (
-        patch(
-            "src.clinical_notes.agents.investigator.generate_structured",
-            new_callable=AsyncMock,
-        ) as mock_gen,
-        patch(
-            "src.clinical_notes.agents.investigator.KnowledgeLoader",
-        ) as mock_loader_cls,
-        patch.object(agent, "_supports_tools", return_value=False),
-    ):
-        mock_loader = mock_loader_cls.return_value
-        mock_loader.load = AsyncMock(return_value="NAACCR histology codes reference content")
+    with patch(
+        "src.clinical_notes.agents.investigator.generate_with_tools",
+        new_callable=AsyncMock,
+    ) as mock_gen:
         mock_gen.return_value = mock_report
         result = await agent.run(assignment, knowledge_sources=sources)
 
     assert result.variable_name == "Primary Site"
-    mock_loader.load.assert_called_once_with(sources[0])
+    mock_gen.assert_called_once()
+    # Verify tools were passed
+    call_args = mock_gen.call_args
+    tools = call_args.args[2] if len(call_args.args) > 2 else call_args.kwargs.get("tools", [])
+    tool_names = {t["name"] for t in tools} if tools else set()
+    assert "lookup_json_dict" in tool_names
 
 
 @pytest.mark.asyncio
@@ -193,13 +190,10 @@ async def test_investigator_with_tools(mock_report):
         ),
     ]
     agent = InvestigatorAgent()
-    with (
-        patch(
-            "src.clinical_notes.agents.investigator.generate_with_tools",
-            new_callable=AsyncMock,
-        ) as mock_gen,
-        patch.object(agent, "_supports_tools", return_value=True),
-    ):
+    with patch(
+        "src.clinical_notes.agents.investigator.generate_with_tools",
+        new_callable=AsyncMock,
+    ) as mock_gen:
         mock_gen.return_value = mock_report
         result = await agent.run(assignment, knowledge_sources=sources)
 
