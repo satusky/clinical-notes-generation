@@ -16,18 +16,22 @@ CaseSeed → Constructor → [Investigator × N] → CaseConfig → Narrator →
 
 ## Setup
 
-Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
+Requires Python 3.11+, [uv](https://docs.astral.sh/uv/), and [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI.
 
 ```bash
 uv sync
 ```
 
-Configure API keys in a `.env` file:
+The framework uses the `claude` CLI as its LLM engine — no API keys need to be configured directly. Claude Code manages its own authentication. Make sure `claude` is installed and authenticated:
+
+```bash
+claude --version  # verify installation
+```
+
+Optionally set `CLAUDE_CLI_PATH` in a `.env` file if the CLI is not on your `PATH`:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...
-# or
-OPENAI_API_KEY=sk-...
+CLAUDE_CLI_PATH=/path/to/claude
 ```
 
 ## Usage
@@ -76,14 +80,9 @@ uv run python scripts/generate.py
 
 ### Model support
 
-Supports multiple LLM providers via a `provider/model` string format:
+All LLM calls are routed through the Claude Code CLI (`claude -p`). The default model is `sonnet`. You can use any model alias supported by Claude Code (e.g. `sonnet`, `opus`, `haiku`).
 
-- `anthropic/claude-sonnet-4-20250514` (default)
-- `openai/gpt-4o`
-- `ollama/llama3`
-- `vllm/model-name`
-
-Per-agent model overrides can be set via environment variables (e.g. `CONSTRUCTOR_MODEL`, `NARRATOR_MODEL`).
+Per-agent model overrides can be set via environment variables (e.g. `CONSTRUCTOR_MODEL=opus`, `NARRATOR_MODEL=haiku`). Legacy `provider/model` strings (e.g. `anthropic/claude-sonnet-4-20250514`) are accepted and the prefix is stripped automatically.
 
 ## Development
 
