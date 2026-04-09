@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,6 +31,7 @@ class Settings(BaseSettings):
     output_dir: str = "output"
     log_level: str = "INFO"
     max_retries: int = 3
+    validation_mode: Literal["warn", "strict"] = "warn"
 
     def model_for(self, agent_name: str) -> str:
         override = getattr(self, f"{agent_name}_model", None)

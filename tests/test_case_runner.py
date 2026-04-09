@@ -4,7 +4,9 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from src.clinical_notes.case_runner import CaseRunner
+from src.clinical_notes.config import settings
 from src.clinical_notes.models.case import CaseConfig, ClinicalVariables, Difficulty
+from src.clinical_notes.validation import CaseValidationError
 from src.clinical_notes.models.note import ClinicalNote
 from src.clinical_notes.models.patient import MedicalHistorySummary, PatientDemographics
 from src.clinical_notes.models.timeline import Timeline, Visit, VisitAssignment
@@ -307,3 +309,19 @@ async def test_partial_file_survives_mid_pipeline_failure(case_config, tmp_path)
     saved = json.loads(partial_path.read_text())
     assert saved["case_id"] == case_config.case_id
     assert len(saved["notes"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_strict_validation_fails_on_diagnosis_leak(case_config):
+    """Strict validation should fail when coordinator leaks diagnosis terms."""
+    timeline, assignment, note, history1, history2 = _make_fixtures()
+    assignment.visit_scenario = "Findings concerning for appendicitis."
+    runner = _make_mock_runner(case_config, timeline, assignment, note, [history1, history2])
+
+    original_mode = settings.validation_mode
+    settings.validation_mode = "strict"
+    try:
+        with pytest.raises(CaseValidationError, match="assignment validation"):
+            await runner.generate_case(case_config)
+    finally:
+        settings.validation_mode = original_mode
