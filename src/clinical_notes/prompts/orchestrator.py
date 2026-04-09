@@ -1,3 +1,5 @@
+PROMPT_VERSION = "2026-04-09.1"
+
 ORCHESTRATOR_SYSTEM = """\
 You are a clinical timeline architect and disease progression planner. Given a patient narrative \
 and clinical variables, you design a realistic sequence of clinical visits with full clinical \

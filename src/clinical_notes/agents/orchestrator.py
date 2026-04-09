@@ -1,8 +1,12 @@
+import logging
+
 from ..llm import generate_structured
 from ..models.case import CaseConfig
 from ..models.timeline import Timeline
-from ..prompts.orchestrator import ORCHESTRATOR_SYSTEM, orchestrator_user_prompt
+from ..prompts.orchestrator import PROMPT_VERSION, ORCHESTRATOR_SYSTEM, orchestrator_user_prompt
 from .base import BaseAgent
+
+logger = logging.getLogger(__name__)
 
 
 class _TimelineVisits(Timeline):
@@ -13,6 +17,7 @@ class _TimelineVisits(Timeline):
 
 class OrchestratorAgent(BaseAgent):
     agent_name = "orchestrator"
+    prompt_version = PROMPT_VERSION
 
     async def run(self, config: CaseConfig, narrative: str) -> Timeline:
         """Generate a visit timeline with rich clinical data from the narrative."""
@@ -28,6 +33,7 @@ class OrchestratorAgent(BaseAgent):
             case_type=config.case_type.value,
             intended_outcome=config.intended_outcome.value,
         )
+        self.maybe_log_prompts(logger, ORCHESTRATOR_SYSTEM, user_prompt)
         timeline = await generate_structured(
             ORCHESTRATOR_SYSTEM, user_prompt, Timeline, model=self.model
         )

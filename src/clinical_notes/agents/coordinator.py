@@ -1,12 +1,17 @@
+import logging
+
 from ..llm import generate_structured
 from ..models.patient import MedicalHistorySummary
 from ..models.timeline import Visit, VisitAssignment
-from ..prompts.coordinator import COORDINATOR_SYSTEM, coordinator_user_prompt
+from ..prompts.coordinator import PROMPT_VERSION, COORDINATOR_SYSTEM, coordinator_user_prompt
 from .base import BaseAgent
+
+logger = logging.getLogger(__name__)
 
 
 class CoordinatorAgent(BaseAgent):
     agent_name = "coordinator"
+    prompt_version = PROMPT_VERSION
 
     async def run(
         self,
@@ -25,6 +30,7 @@ class CoordinatorAgent(BaseAgent):
             current_medications=medical_history.current_medications,
             allergies=medical_history.allergies,
         )
+        self.maybe_log_prompts(logger, COORDINATOR_SYSTEM, user_prompt)
         return await generate_structured(
             COORDINATOR_SYSTEM, user_prompt, VisitAssignment, model=self.model
         )

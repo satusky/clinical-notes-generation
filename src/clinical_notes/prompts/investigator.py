@@ -1,5 +1,7 @@
 from ..models.investigation import KnowledgeSource, VariableAssignment
 
+PROMPT_VERSION = "2026-04-09.1"
+
 INVESTIGATOR_SYSTEM = """\
 You are a clinical coding investigator. Your role is to interpret a coded value from a clinical \
 coding system by consulting reference documents.

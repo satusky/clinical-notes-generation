@@ -1,3 +1,5 @@
+PROMPT_VERSION = "2026-04-09.1"
+
 COORDINATOR_SYSTEM = """\
 You are a clinical visit coordinator. Your role is to filter rich visit data for the clinician \
 who will write the clinical note.

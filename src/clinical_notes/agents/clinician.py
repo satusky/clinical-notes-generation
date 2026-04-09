@@ -1,13 +1,18 @@
+import logging
+
 from ..llm import generate_structured
 from ..models.note import ClinicalNote
 from ..models.patient import MedicalHistorySummary
 from ..models.timeline import VisitAssignment
-from ..prompts.clinician import CLINICIAN_SYSTEM, clinician_user_prompt
+from ..prompts.clinician import PROMPT_VERSION, CLINICIAN_SYSTEM, clinician_user_prompt
 from .base import BaseAgent
+
+logger = logging.getLogger(__name__)
 
 
 class ClinicianAgent(BaseAgent):
     agent_name = "clinician"
+    prompt_version = PROMPT_VERSION
 
     async def run(
         self,
@@ -36,6 +41,7 @@ class ClinicianAgent(BaseAgent):
             treatments_administered=assignment.treatments_administered,
             patient_response=assignment.patient_response,
         )
+        self.maybe_log_prompts(logger, CLINICIAN_SYSTEM, user_prompt)
         return await generate_structured(
             CLINICIAN_SYSTEM, user_prompt, ClinicalNote, model=self.model
         )

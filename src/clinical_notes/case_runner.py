@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 
 from .agents import ClinicianAgent, CoordinatorAgent, NarratorAgent, OrchestratorAgent, ScribeAgent
 from .config import settings
@@ -107,6 +108,7 @@ class CaseRunner:
             validate_final_case(case),
             f"Case {config.case_id}: final case validation",
         )
+        case["generation_metadata"] = self._generation_metadata()
         return case
 
     def _save_progress(
@@ -128,6 +130,34 @@ class CaseRunner:
             context=context,
             logger=logger,
         )
+
+    def _generation_metadata(self) -> dict:
+        generated_at = datetime.now(timezone.utc).isoformat()
+        return {
+            "generated_at": generated_at,
+            "agents": {
+                "narrator": {
+                    "model": self.narrator.model,
+                    "prompt_version": self.narrator.prompt_version,
+                },
+                "orchestrator": {
+                    "model": self.orchestrator.model,
+                    "prompt_version": self.orchestrator.prompt_version,
+                },
+                "coordinator": {
+                    "model": self.coordinator.model,
+                    "prompt_version": self.coordinator.prompt_version,
+                },
+                "clinician": {
+                    "model": self.clinician.model,
+                    "prompt_version": self.clinician.prompt_version,
+                },
+                "scribe": {
+                    "model": self.scribe.model,
+                    "prompt_version": self.scribe.prompt_version,
+                },
+            },
+        }
 
 
 def _serialize_case(

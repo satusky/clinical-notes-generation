@@ -12,6 +12,7 @@ from ..models.investigation import (
     VariableAssignment,
 )
 from ..prompts.investigator import (
+    PROMPT_VERSION,
     INVESTIGATOR_SYSTEM,
     investigator_system_prompt,
     investigator_tool_user_prompt,
@@ -143,6 +144,7 @@ def _build_tool_executors(allowed_paths: set[str]) -> dict:
 
 class InvestigatorAgent(BaseAgent):
     agent_name = "investigator"
+    prompt_version = PROMPT_VERSION
 
     def _supports_tools(self) -> bool:
         """Check if the current model provider supports tool use."""
@@ -193,6 +195,7 @@ class InvestigatorAgent(BaseAgent):
             assignment, knowledge_sources, assignment.relevant_sources
         )
 
+        self.maybe_log_prompts(logger, system, user)
         report = await generate_with_tools(
             system, user, tools, executors, InvestigatorReport, model=self.model
         )
@@ -230,6 +233,7 @@ class InvestigatorAgent(BaseAgent):
                 )
 
         user_prompt = investigator_user_prompt(assignment, source_content)
+        self.maybe_log_prompts(logger, INVESTIGATOR_SYSTEM, user_prompt)
         report = await generate_structured(
             INVESTIGATOR_SYSTEM, user_prompt, InvestigatorReport, model=self.model
         )

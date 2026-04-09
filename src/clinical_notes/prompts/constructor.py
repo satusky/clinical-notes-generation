@@ -1,5 +1,7 @@
 from ..models.investigation import CaseSeed, InvestigationPlan, InvestigatorReport
 
+PROMPT_VERSION = "2026-04-09.1"
+
 CONSTRUCTOR_PLAN_SYSTEM = """\
 You are a clinical case construction planner specializing in oncology and complex medical cases.
 

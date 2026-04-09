@@ -144,6 +144,11 @@ async def test_generate_case_end_to_end(case_config):
     assert result["narrative"] == mock_narrative
     assert len(result["timeline"]) == 2
     assert len(result["notes"]) == 2
+    assert "generation_metadata" in result
+    agents_meta = result["generation_metadata"]["agents"]
+    for agent_name in ("narrator", "orchestrator", "coordinator", "clinician", "scribe"):
+        assert "model" in agents_meta[agent_name]
+        assert "prompt_version" in agents_meta[agent_name]
 
     # Verify sequential processing — coordinator/clinician/scribe called once per visit
     assert mock_coordinator.call_count == 2

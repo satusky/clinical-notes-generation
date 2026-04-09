@@ -32,7 +32,17 @@ The complete case record produced by `CaseRunner.generate_case()`.
   "narrative": "The patient, a 67-year-old male with a history of ...",
   "timeline": [ "..." ],
   "notes": [ "..." ],
-  "final_medical_history": { "..." }
+  "final_medical_history": { "..." },
+  "generation_metadata": {
+    "generated_at": "2026-04-09T11:30:00+00:00",
+    "agents": {
+      "narrator": {"model": "anthropic/claude-sonnet-4-20250514", "prompt_version": "2026-04-09.1"},
+      "orchestrator": {"model": "anthropic/claude-sonnet-4-20250514", "prompt_version": "2026-04-09.1"},
+      "coordinator": {"model": "anthropic/claude-sonnet-4-20250514", "prompt_version": "2026-04-09.1"},
+      "clinician": {"model": "anthropic/claude-sonnet-4-20250514", "prompt_version": "2026-04-09.1"},
+      "scribe": {"model": "anthropic/claude-sonnet-4-20250514", "prompt_version": "2026-04-09.1"}
+    }
+  }
 }
 ```
 
@@ -49,6 +59,7 @@ The complete case record produced by `CaseRunner.generate_case()`.
 | `timeline` | array | Ordered list of Visit objects (see below) |
 | `notes` | array | Ordered list of ClinicalNote objects (see below) |
 | `final_medical_history` | object | Patient's medical history after all visits (see below) |
+| `generation_metadata` | object | Generation trace metadata including timestamp, model, and prompt version per agent |
 
 ### `clinical_variables`
 

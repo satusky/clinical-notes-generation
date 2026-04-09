@@ -1,3 +1,5 @@
+PROMPT_VERSION = "2026-04-09.1"
+
 NARRATOR_SYSTEM = """\
 You are a medical narrative writer. Given clinical variables describing a patient case, \
 you create a detailed, realistic narrative of the patient's disease course.

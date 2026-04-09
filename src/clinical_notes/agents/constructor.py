@@ -6,6 +6,7 @@ from ..llm import generate_structured
 from ..models.case import CaseConfig
 from ..models.investigation import CaseSeed, InvestigationPlan, InvestigatorReport
 from ..prompts.constructor import (
+    PROMPT_VERSION,
     CONSTRUCTOR_MERGE_SYSTEM,
     CONSTRUCTOR_PLAN_SYSTEM,
     constructor_merge_prompt,
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class ConstructorAgent(BaseAgent):
     agent_name = "constructor"
+    prompt_version = PROMPT_VERSION
 
     async def run(self, seed: CaseSeed) -> CaseConfig:
         """Decompose a condition, investigate variables, and merge into a CaseConfig."""
@@ -28,6 +30,7 @@ class ConstructorAgent(BaseAgent):
             len(seed.raw_variables) if seed.raw_variables else 0,
         )
         plan_prompt = constructor_plan_prompt(seed)
+        self.maybe_log_prompts(logger, CONSTRUCTOR_PLAN_SYSTEM, plan_prompt)
         plan = await generate_structured(
             CONSTRUCTOR_PLAN_SYSTEM, plan_prompt, InvestigationPlan, model=self.model
         )
@@ -72,6 +75,7 @@ class ConstructorAgent(BaseAgent):
         # Step 3: Merge — synthesize reports into a CaseConfig
         logger.info("Merge phase start: %d reports", len(reports))
         merge_prompt = constructor_merge_prompt(seed, plan, reports)
+        self.maybe_log_prompts(logger, CONSTRUCTOR_MERGE_SYSTEM, merge_prompt)
         config = await generate_structured(
             CONSTRUCTOR_MERGE_SYSTEM, merge_prompt, CaseConfig, model=self.model
         )

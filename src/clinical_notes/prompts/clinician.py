@@ -1,3 +1,5 @@
+PROMPT_VERSION = "2026-04-09.1"
+
 CLINICIAN_SYSTEM = """\
 You are a clinician writing a clinical note for a patient visit. You have access to:
 - The visit assignment (symptoms, vitals, history, test results)
