@@ -53,6 +53,9 @@ uv run python scripts/build_case.py \
   --outcome worsening
 ```
 
+If `--difficulty`, `--case-type`, or `--outcome` are omitted, the CLI samples them randomly.
+For reproducible sampling, pass `--seed <int>` or set `CASE_RANDOM_SEED`.
+
 Or using a variables file:
 
 ```bash
@@ -113,3 +116,7 @@ Per-agent model overrides in `.env` or environment:
 - `CONSTRUCTOR_MODEL` — model for the Constructor agent
 - `INVESTIGATOR_MODEL` — model for Investigator agents
 - `KNOWLEDGE_SOURCE_MAX_CHARS` — max chars per knowledge source (default 10,000)
+- `CASE_RANDOM_SEED` — optional integer seed for reproducible random defaults in `build_case.py`
+
+Note: `CaseConfig` model defaults are deterministic (`medium`, `acute`, `resolved`).
+Randomness is applied at the CLI layer when constraints are omitted.

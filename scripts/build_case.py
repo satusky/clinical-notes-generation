@@ -128,13 +128,34 @@ def get_variables(args: argparse.Namespace) -> list[dict[str, str]]:
     return [raw_variables]
 
 
-def _random_choice(*options: str) -> str:
-    return options[random.randint(0, len(options) - 1)]
+def _resolve_random_seed(cli_seed: int | None) -> int | None:
+    """Resolve random seed from CLI first, then CASE_RANDOM_SEED env var."""
+    if cli_seed is not None:
+        return cli_seed
+
+    env_seed = os.getenv("CASE_RANDOM_SEED")
+    if env_seed is None:
+        return None
+
+    try:
+        return int(env_seed)
+    except ValueError:
+        print("Error: CASE_RANDOM_SEED must be an integer", file=sys.stderr)
+        sys.exit(1)
+
+
+def _random_choice(rng: random.Random, *options: str) -> str:
+    return options[rng.randrange(len(options))]
 
 
 async def run(args: argparse.Namespace):
     logging.basicConfig(level=getattr(logging, settings.log_level))
     sources = [_parse_source(s) for s in args.source] if args.source else []
+
+    seed = _resolve_random_seed(args.seed)
+    rng = random.Random(seed)
+    if seed is not None:
+        logging.info("Using case random seed: %d", seed)
 
     if args.seed_file:
         seed_entries = load_seed_file(Path(args.seed_file))
@@ -150,17 +171,17 @@ async def run(args: argparse.Namespace):
                 coding_system=entry.get("coding_system") or args.coding_system,
                 age=entry.get("age") or args.age,
                 sex=entry.get("sex") or args.sex,
-                difficulty=entry.get("difficulty") or args.difficulty or _random_choice("easy", "medium", "hard"),
-                case_type=entry.get("case_type") or args.case_type or _random_choice("acute", "chronic"),
-                intended_outcome=entry.get("outcome") or args.outcome or _random_choice("resolved", "improving", "worsening", "undiagnosed"),
+                difficulty=entry.get("difficulty") or args.difficulty or _random_choice(rng, "easy", "medium", "hard"),
+                case_type=entry.get("case_type") or args.case_type or _random_choice(rng, "acute", "chronic"),
+                intended_outcome=entry.get("outcome") or args.outcome or _random_choice(rng, "resolved", "improving", "worsening", "undiagnosed"),
                 knowledge_sources=sources,
             )
             seeds.append(seed)
     else:
         case_list = get_variables(args)
-        difficulty = args.difficulty or _random_choice("easy", "medium", "hard")
-        case_type = args.case_type or _random_choice("acute", "chronic")
-        outcome = args.outcome or _random_choice("resolved", "improving", "worsening", "undiagnosed")
+        difficulty = args.difficulty or _random_choice(rng, "easy", "medium", "hard")
+        case_type = args.case_type or _random_choice(rng, "acute", "chronic")
+        outcome = args.outcome or _random_choice(rng, "resolved", "improving", "worsening", "undiagnosed")
         seeds = [
             CaseSeed(
                 raw_variables=raw_variables,
@@ -208,6 +229,8 @@ def main():
     parser.add_argument("--case-type", default=None, choices=["acute", "chronic"])
     parser.add_argument("--outcome", default=None,
                         choices=["resolved", "improving", "worsening", "undiagnosed"])
+    parser.add_argument("--seed", type=int, default=None,
+                        help="Seed for reproducible random selection of difficulty/case-type/outcome")
     parser.add_argument("--source", "-s", action="append", help="Knowledge source (URL or path)")
     parser.add_argument("--seed-file", default=None,
                         help="JSONL file with CaseSeed fields per line (disease, difficulty, case_type, outcome, etc.)")

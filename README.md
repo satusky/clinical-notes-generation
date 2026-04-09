@@ -46,7 +46,7 @@ uv run python scripts/build_case.py \
   --outcome worsening
 ```
 
-Optional flags: `--age`, `--sex`, `--variables-file` (JSON dict), `--source` (repeatable — accepts URLs or file/directory paths), `--output`.
+Optional flags: `--age`, `--sex`, `--variables-file` (JSON dict), `--source` (repeatable — accepts URLs or file/directory paths), `--output`, `--seed` (reproducible random defaults for difficulty/case-type/outcome when omitted). You can also set `CASE_RANDOM_SEED`.
 
 ### Generate clinical notes from a seed file
 
