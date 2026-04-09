@@ -1,10 +1,17 @@
 import logging
 
 from .agents import ClinicianAgent, CoordinatorAgent, NarratorAgent, OrchestratorAgent, ScribeAgent
+from .config import settings
 from .io import remove_partial, save_partial_case
 from .models.case import CaseConfig
 from .models.patient import MedicalHistorySummary, PatientDemographics
 from .models.timeline import Timeline
+from .validation import (
+    enforce_validation,
+    validate_assignment_no_diagnosis,
+    validate_final_case,
+    validate_note_alignment,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,11 +63,21 @@ class CaseRunner:
                     medical_history=medical_history,
                 )
 
+                self._enforce_issues(
+                    validate_assignment_no_diagnosis(cv.primary_condition, assignment),
+                    f"Case {config.case_id} visit {visit.visit_number}: assignment validation",
+                )
+
                 # Clinician writes note (no diagnosis access)
                 note = await self.clinician.run(assignment, medical_history)
                 note.visit_number = visit.visit_number
                 note.clinician_specialty = visit.clinician_specialty
                 note.note_date = visit.visit_date
+
+                self._enforce_issues(
+                    validate_note_alignment(visit, note),
+                    f"Case {config.case_id} visit {visit.visit_number}: note alignment validation",
+                )
 
                 # Store note on the visit and collect it
                 visit.note = note.content
@@ -85,7 +102,12 @@ class CaseRunner:
 
         logger.info("Case %s: Complete (%d visits)", config.case_id, len(notes))
 
-        return _serialize_case(config, timeline, notes, medical_history)
+        case = _serialize_case(config, timeline, notes, medical_history)
+        self._enforce_issues(
+            validate_final_case(case),
+            f"Case {config.case_id}: final case validation",
+        )
+        return case
 
     def _save_progress(
         self,
@@ -98,6 +120,14 @@ class CaseRunner:
         """Write a partial case JSON after each successful visit."""
         case = _serialize_case(config, timeline, notes, medical_history)
         save_partial_case(case, output_dir)
+
+    def _enforce_issues(self, issues: list[str], context: str) -> None:
+        enforce_validation(
+            issues,
+            mode=settings.validation_mode,
+            context=context,
+            logger=logger,
+        )
 
 
 def _serialize_case(

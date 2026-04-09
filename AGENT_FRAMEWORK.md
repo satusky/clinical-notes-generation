@@ -21,6 +21,7 @@ Important note: difficult to diagnose is not the same as difficult to treat. Som
 4. The clinician only receives the filtered visit assignment (including the visit scenario) and a summary medical history. They do not receive the underlying disease information.
 4. The clinician will write a note that captures the outcomes of the visit and any recommendations for future interventions, if applicable.
 5. The Scribe updates the patient's medical history summary after each visit.
+6. Runtime validators check for diagnosis leakage, note/visit alignment, and timeline consistency. Validation can run in `warn` mode (log only) or `strict` mode (raise errors).
 
 Additional information:
 - The course of the case should follow the progress of the underlying disease or illness.
@@ -76,8 +77,17 @@ FOR EACH Visit:
   [COORDINATOR] ──→ VisitAssignment (filters diagnosis from rich Visit data)
        │
        ▼
+  [VALIDATOR] ──→ Assignment leakage checks
+       │
+       ▼
   [CLINICIAN] ──→ ClinicalNote (writes note from visit scenario)
        │
        ▼
+  [VALIDATOR] ──→ Note/Visit alignment checks
+       │
+       ▼
   [SCRIBE] ──→ Updated MedicalHistorySummary
+
+FINAL:
+  [VALIDATOR] ──→ Case-level timeline and notes consistency checks
 ```

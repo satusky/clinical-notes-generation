@@ -85,6 +85,10 @@ Supports multiple LLM providers via a `provider/model` string format:
 
 Per-agent model overrides can be set via environment variables (e.g. `CONSTRUCTOR_MODEL`, `NARRATOR_MODEL`).
 
+Runtime validation can be configured with `VALIDATION_MODE`:
+- `warn` (default): log validation issues and continue
+- `strict`: raise on validation issues (useful for QA pipelines)
+
 ## Development
 
 ```bash
