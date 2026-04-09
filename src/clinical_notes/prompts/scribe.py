@@ -1,3 +1,5 @@
+PROMPT_VERSION = "2026-04-09.1"
+
 SCRIBE_SYSTEM = """\
 You are a medical records scribe. Your role is to maintain and update a patient's medical \
 history summary after each clinical visit.
