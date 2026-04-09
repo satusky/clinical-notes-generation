@@ -45,6 +45,8 @@ class ClinicianAgent(BaseAgent):
             new_events_this_visit=assignment.new_events_this_visit,
             carry_forward_items=assignment.carry_forward_items,
             what_changed_since_last_visit=assignment.what_changed_since_last_visit,
+            test_result_certainty=assignment.test_result_certainty,
+            unresolved_questions=assignment.unresolved_questions,
             medication_changes=[m.model_dump() for m in assignment.medication_changes],
             diagnostic_workup_updates=[w.model_dump() for w in assignment.diagnostic_workup_updates],
         )

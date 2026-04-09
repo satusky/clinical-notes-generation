@@ -89,6 +89,8 @@ For each visit, provide:
 - new_events_this_visit (new symptoms/findings/events)
 - carry_forward_items (unresolved items from prior visits)
 - what_changed_since_last_visit (explicit state transitions)
+- test_result_certainty (map of test -> definitive/suggestive/inconclusive/conflicting)
+- unresolved_questions (open diagnostic/management questions after this visit)
 - medication_changes (structured start/continue/adjust/hold/stop/complete events)
 - diagnostic_workup_updates (structured ordered/pending/resulted/inconclusive updates)
 - disease_progression_notes (internal tracking of disease state — include diagnosis details)

@@ -78,6 +78,8 @@ class Visit(BaseModel):
     new_events_this_visit: list[str] = Field(default_factory=list)
     carry_forward_items: list[str] = Field(default_factory=list)
     what_changed_since_last_visit: list[str] = Field(default_factory=list)
+    test_result_certainty: dict[str, str] = Field(default_factory=dict)
+    unresolved_questions: list[str] = Field(default_factory=list)
     medication_changes: list[MedicationChange] = Field(default_factory=list)
     diagnostic_workup_updates: list[DiagnosticWorkupUpdate] = Field(default_factory=list)
 
@@ -118,5 +120,7 @@ class VisitAssignment(BaseModel):
     new_events_this_visit: list[str] = Field(default_factory=list)
     carry_forward_items: list[str] = Field(default_factory=list)
     what_changed_since_last_visit: list[str] = Field(default_factory=list)
+    test_result_certainty: dict[str, str] = Field(default_factory=dict)
+    unresolved_questions: list[str] = Field(default_factory=list)
     medication_changes: list[MedicationChange] = Field(default_factory=list)
     diagnostic_workup_updates: list[DiagnosticWorkupUpdate] = Field(default_factory=list)

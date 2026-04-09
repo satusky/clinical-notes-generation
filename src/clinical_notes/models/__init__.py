@@ -8,7 +8,7 @@ from .investigation import (
     KnowledgeSourceType,
     VariableAssignment,
 )
-from .note import ClinicalNote, MedicationAction, WorkupPlanAction
+from .note import ClinicalNote, DiagnosticUncertainty, MedicationAction, WorkupPlanAction
 from .patient import (
     ClinicalQuestion,
     DiagnosticWorkup,
@@ -28,6 +28,7 @@ __all__ = [
     "ClinicalNote",
     "ClinicalVariables",
     "Confidence",
+    "DiagnosticUncertainty",
     "Difficulty",
     "InvestigationPlan",
     "InvestigatorReport",

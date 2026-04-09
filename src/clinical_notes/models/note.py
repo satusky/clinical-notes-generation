@@ -22,6 +22,14 @@ class WorkupPlanAction(BaseModel):
     next_step: str | None = None
 
 
+class DiagnosticUncertainty(BaseModel):
+    diagnosis: str
+    confidence: str = Field(description="low | medium | high")
+    rationale: str
+    within_specialty_scope: bool = True
+    recommended_referral: str | None = None
+
+
 class ClinicalNote(BaseModel):
     visit_number: int = Field(ge=1)
     clinician_specialty: str
@@ -37,3 +45,7 @@ class ClinicalNote(BaseModel):
     # Structured care-continuity outputs
     medication_actions: list[MedicationAction] = Field(default_factory=list)
     workup_plan_actions: list[WorkupPlanAction] = Field(default_factory=list)
+
+    # Structured uncertainty/scope outputs
+    diagnostic_uncertainty: list[DiagnosticUncertainty] = Field(default_factory=list)
+    specialty_scope_statement: str = Field(default="")

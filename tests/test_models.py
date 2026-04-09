@@ -84,6 +84,8 @@ class TestVisit:
         assert v.new_events_this_visit == []
         assert v.carry_forward_items == []
         assert v.what_changed_since_last_visit == []
+        assert v.test_result_certainty == {}
+        assert v.unresolved_questions == []
         assert v.medication_changes == []
         assert v.diagnostic_workup_updates == []
 
@@ -114,6 +116,8 @@ class TestVisit:
             new_events_this_visit=["No recurrent chest pain episodes"],
             carry_forward_items=["Clarify ischemic burden"],
             what_changed_since_last_visit=["Started daily aspirin"],
+            test_result_certainty={"Troponin": "inconclusive"},
+            unresolved_questions=["Cause of exertional dyspnea remains unclear"],
             medication_changes=[
                 {
                     "action": "start",
@@ -137,6 +141,8 @@ class TestVisit:
         assert len(v.examination_findings) == 2
         assert v.disease_progression_notes != ""
         assert v.must_address_this_visit[0] == "Review troponin trend"
+        assert v.test_result_certainty["Troponin"] == "inconclusive"
+        assert v.unresolved_questions[0] == "Cause of exertional dyspnea remains unclear"
         assert v.medication_changes[0].action == "start"
         assert v.diagnostic_workup_updates[0].status == "ordered"
 
@@ -185,6 +191,8 @@ class TestVisitAssignment:
         assert va.new_events_this_visit == []
         assert va.carry_forward_items == []
         assert va.what_changed_since_last_visit == []
+        assert va.test_result_certainty == {}
+        assert va.unresolved_questions == []
         assert va.medication_changes == []
         assert va.diagnostic_workup_updates == []
 
@@ -211,6 +219,8 @@ class TestVisitAssignment:
             new_events_this_visit=["Symptoms improved"],
             carry_forward_items=["Monitor exertional symptoms"],
             what_changed_since_last_visit=["Continued aspirin"],
+            test_result_certainty={"Troponin": "definitive"},
+            unresolved_questions=["Need outpatient stress testing"],
             medication_changes=[
                 {
                     "action": "continue",
@@ -234,6 +244,8 @@ class TestVisitAssignment:
         assert len(va.test_results) == 1
         assert va.patient_response != ""
         assert va.carry_forward_items[0] == "Monitor exertional symptoms"
+        assert va.test_result_certainty["Troponin"] == "definitive"
+        assert va.unresolved_questions[0] == "Need outpatient stress testing"
         assert va.medication_changes[0].action == "continue"
         assert va.diagnostic_workup_updates[0].status == "resulted"
 
@@ -270,3 +282,5 @@ class TestClinicalNote:
         assert note.medications == []
         assert note.medication_actions == []
         assert note.workup_plan_actions == []
+        assert note.diagnostic_uncertainty == []
+        assert note.specialty_scope_statement == ""

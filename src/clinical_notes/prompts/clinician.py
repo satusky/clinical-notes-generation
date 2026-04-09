@@ -1,3 +1,5 @@
+from .specialty_profiles import specialty_guidance_for
+
 PROMPT_VERSION = "2026-04-09.1"
 
 CLINICIAN_SYSTEM = """\
@@ -12,6 +14,8 @@ Based on this information, write a realistic clinical note. You should:
 - Include your clinical reasoning and differential diagnosis
 - Order appropriate tests and prescribe medications as needed
 - Provide follow-up recommendations
+- Stay within your specialty scope and state when referral/escalation is needed
+- Explicitly capture uncertainty when findings are inconclusive or outside your scope
 
 Write the note in a natural clinical style. You do NOT know the patient's underlying diagnosis — \
 reason from the evidence presented to you.
@@ -43,6 +47,8 @@ def clinician_user_prompt(
     new_events_this_visit: list[str] | None = None,
     carry_forward_items: list[str] | None = None,
     what_changed_since_last_visit: list[str] | None = None,
+    test_result_certainty: dict[str, str] | None = None,
+    unresolved_questions: list[str] | None = None,
     medication_changes: list[dict] | None = None,
     diagnostic_workup_updates: list[dict] | None = None,
 ) -> str:
@@ -77,12 +83,21 @@ def clinician_user_prompt(
     changed_str = (
         "\n".join(f"  - {item}" for item in (what_changed_since_last_visit or [])) or "  None"
     )
+    certainty_str = (
+        "\n".join(f"  - {k}: {v}" for k, v in (test_result_certainty or {}).items())
+        or "  None"
+    )
+    unresolved_str = (
+        "\n".join(f"  - {q}" for q in (unresolved_questions or [])) or "  None"
+    )
     med_changes_str = (
         "\n".join(f"  - {m}" for m in (medication_changes or [])) or "  None"
     )
     workup_updates_str = (
         "\n".join(f"  - {w}" for w in (diagnostic_workup_updates or [])) or "  None"
     )
+
+    specialty_guidance = specialty_guidance_for(clinician_specialty)
 
     parts = [
         "Write a clinical note for this encounter.",
@@ -95,6 +110,9 @@ def clinician_user_prompt(
         f"Known conditions: {conditions_str}",
         f"Current medications: {meds_str}",
         f"Allergies: {allergies_str}",
+        "",
+        "Specialty guidance:",
+        specialty_guidance,
     ]
 
     if visit_scenario:
@@ -145,6 +163,12 @@ def clinician_user_prompt(
         "What changed since last visit:",
         f"{changed_str}",
         "",
+        "Test result certainty map:",
+        f"{certainty_str}",
+        "",
+        "Unresolved clinical questions:",
+        f"{unresolved_str}",
+        "",
         "Medication lifecycle changes for this visit:",
         f"{med_changes_str}",
         "",
@@ -157,7 +181,7 @@ def clinician_user_prompt(
         "Write a complete clinical note including your assessment and plan. Respond with a JSON object "
         "containing: content (the full note text), symptoms_reported, vitals, tests_ordered, "
         "diagnoses_considered, medications, follow_up_recommendations, medication_actions, "
-        "and workup_plan_actions.",
+        "workup_plan_actions, diagnostic_uncertainty, and specialty_scope_statement.",
     ])
 
     return "\n".join(parts)
