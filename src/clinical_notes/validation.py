@@ -132,6 +132,12 @@ def validate_final_case(case: dict) -> list[str]:
         if note_visit not in visit_numbers:
             issues.append(f"Note references unknown visit_number: {note_visit}")
 
+    issues.extend(_validate_medication_continuity(timeline))
+    issues.extend(_validate_pending_workup_closure(timeline))
+    issues.extend(_validate_follow_up_commitments(notes, timeline))
+    issues.extend(_validate_specialty_scope(notes))
+    issues.extend(_validate_uncertainty_consistency(notes))
+
     return issues
 
 
@@ -149,6 +155,122 @@ def _diagnosis_terms(primary_condition: str) -> set[str]:
 def _contains_any_term(text: str, terms: set[str]) -> bool:
     haystack = (text or "").lower()
     return any(term and term in haystack for term in terms)
+
+
+def _validate_medication_continuity(timeline: list[dict]) -> list[str]:
+    issues: list[str] = []
+    stopped: set[str] = set()
+
+    for visit in timeline:
+        visit_num = visit.get("visit_number")
+        changes = visit.get("medication_changes", []) or []
+
+        for change in changes:
+            med = (change.get("medication") or "").strip().lower()
+            action = (change.get("action") or "").strip().lower()
+            if not med:
+                continue
+            if action in {"start", "continue", "adjust", "restart"}:
+                stopped.discard(med)
+            elif action in {"stop", "complete", "discontinue", "discontinued", "hold"}:
+                stopped.add(med)
+
+        active = {(m or "").strip().lower() for m in (visit.get("current_medications") or []) if m}
+        leaked = sorted(med for med in stopped if med in active)
+        if leaked:
+            issues.append(
+                f"Medication continuity issue at visit {visit_num}: stopped/completed meds still active ({', '.join(leaked)})"
+            )
+
+    return issues
+
+
+def _validate_pending_workup_closure(timeline: list[dict]) -> list[str]:
+    issues: list[str] = []
+    pending: dict[str, int] = {}
+
+    for visit in timeline:
+        visit_num = int(visit.get("visit_number") or 0)
+        updates = visit.get("diagnostic_workup_updates", []) or []
+        for update in updates:
+            test_name = (update.get("test_name") or "").strip().lower()
+            status = (update.get("status") or "").strip().lower()
+            if not test_name:
+                continue
+            if status in {"ordered", "pending"}:
+                pending[test_name] = visit_num
+            elif status in {"resulted", "inconclusive"}:
+                pending.pop(test_name, None)
+
+    for test_name, opened_visit in sorted(pending.items()):
+        issues.append(
+            f"Diagnostic workup '{test_name}' ordered/pending since visit {opened_visit} was never closed"
+        )
+
+    return issues
+
+
+def _validate_follow_up_commitments(notes: list[dict], timeline: list[dict]) -> list[str]:
+    issues: list[str] = []
+
+    for idx, note in enumerate(notes[:-1]):
+        visit_num = note.get("visit_number")
+        recs = note.get("follow_up_recommendations", []) or []
+        future_visits = timeline[idx + 1 :]
+        future_text = "\n".join(
+            " ".join(
+                [
+                    str(v.get("reason_for_visit") or ""),
+                    str(v.get("visit_scenario") or ""),
+                    " ".join(v.get("must_address_this_visit", []) or []),
+                    " ".join(v.get("carry_forward_items", []) or []),
+                ]
+            ).lower()
+            for v in future_visits
+        )
+
+        for rec in recs:
+            rec_text = (rec or "").strip().lower()
+            if not rec_text:
+                continue
+            if rec_text not in future_text:
+                issues.append(
+                    f"Follow-up commitment from note visit {visit_num} not reflected later: '{rec}'"
+                )
+
+    return issues
+
+
+def _validate_specialty_scope(notes: list[dict]) -> list[str]:
+    issues: list[str] = []
+    for note in notes:
+        visit_num = note.get("visit_number")
+        uncertainty = note.get("diagnostic_uncertainty", []) or []
+        scope_stmt = (note.get("specialty_scope_statement") or "").strip()
+        if uncertainty and not scope_stmt:
+            issues.append(
+                f"Specialty scope issue at note visit {visit_num}: uncertainty documented without specialty_scope_statement"
+            )
+    return issues
+
+
+def _validate_uncertainty_consistency(notes: list[dict]) -> list[str]:
+    issues: list[str] = []
+    for note in notes:
+        visit_num = note.get("visit_number")
+        uncertainty = note.get("diagnostic_uncertainty", []) or []
+        follow_up = note.get("follow_up_recommendations", []) or []
+        workup_actions = note.get("workup_plan_actions", []) or []
+
+        has_low_or_medium = any(
+            (u.get("confidence") or "").strip().lower() in {"low", "medium"} for u in uncertainty
+        )
+        if has_low_or_medium and not follow_up and not workup_actions:
+            issues.append(
+                f"Uncertainty consistency issue at note visit {visit_num}: low/medium confidence without follow-up/workup plan"
+            )
+
+    return issues
 
 
 def _parse_iso_date(value: str | None) -> date | None:

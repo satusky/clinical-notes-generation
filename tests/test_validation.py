@@ -66,3 +66,111 @@ def test_validate_final_case_detects_timeline_issues():
     assert any("visit_number mismatch" in issue for issue in issues)
     assert any("Timeline date decreased" in issue for issue in issues)
     assert any("Notes count" in issue for issue in issues)
+
+
+def test_validate_final_case_detects_medication_continuity_issue():
+    case = {
+        "timeline": [
+            {
+                "visit_number": 1,
+                "visit_date": "2025-01-01",
+                "current_medications": ["Drug A"],
+                "medication_changes": [{"action": "start", "medication": "Drug A"}],
+            },
+            {
+                "visit_number": 2,
+                "visit_date": "2025-01-15",
+                "current_medications": ["Drug A"],
+                "medication_changes": [{"action": "stop", "medication": "Drug A"}],
+            },
+            {
+                "visit_number": 3,
+                "visit_date": "2025-02-01",
+                "current_medications": ["Drug A"],
+                "medication_changes": [],
+            },
+        ],
+        "notes": [{"visit_number": 1}, {"visit_number": 2}, {"visit_number": 3}],
+    }
+
+    issues = validate_final_case(case)
+    assert any("Medication continuity issue" in issue for issue in issues)
+
+
+def test_validate_final_case_detects_unclosed_workup():
+    case = {
+        "timeline": [
+            {
+                "visit_number": 1,
+                "visit_date": "2025-01-01",
+                "diagnostic_workup_updates": [{"test_name": "CT chest", "status": "ordered"}],
+            },
+            {
+                "visit_number": 2,
+                "visit_date": "2025-01-15",
+                "diagnostic_workup_updates": [],
+            },
+        ],
+        "notes": [{"visit_number": 1}, {"visit_number": 2}],
+    }
+
+    issues = validate_final_case(case)
+    assert any("never closed" in issue for issue in issues)
+
+
+def test_validate_final_case_detects_uncertainty_without_plan():
+    case = {
+        "timeline": [
+            {"visit_number": 1, "visit_date": "2025-01-01"},
+            {"visit_number": 2, "visit_date": "2025-01-15"},
+        ],
+        "notes": [
+            {
+                "visit_number": 1,
+                "diagnostic_uncertainty": [
+                    {"diagnosis": "Condition X", "confidence": "low", "rationale": "nonspecific"}
+                ],
+                "follow_up_recommendations": [],
+                "workup_plan_actions": [],
+                "specialty_scope_statement": "",
+            },
+            {"visit_number": 2},
+        ],
+    }
+
+    issues = validate_final_case(case)
+    assert any("Specialty scope issue" in issue for issue in issues)
+    assert any("Uncertainty consistency issue" in issue for issue in issues)
+
+
+def test_validate_final_case_detects_followup_not_reflected():
+    case = {
+        "timeline": [
+            {
+                "visit_number": 1,
+                "visit_date": "2025-01-01",
+                "reason_for_visit": "initial",
+                "visit_scenario": "initial",
+                "must_address_this_visit": [],
+                "carry_forward_items": [],
+            },
+            {
+                "visit_number": 2,
+                "visit_date": "2025-01-15",
+                "reason_for_visit": "unrelated follow-up",
+                "visit_scenario": "different issue",
+                "must_address_this_visit": [],
+                "carry_forward_items": [],
+            },
+        ],
+        "notes": [
+            {
+                "visit_number": 1,
+                "follow_up_recommendations": ["repeat cbc in 2 weeks"],
+            },
+            {"visit_number": 2},
+        ],
+    }
+
+    issues = validate_final_case(case)
+    assert any("Follow-up commitment" in issue for issue in issues)
