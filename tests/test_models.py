@@ -192,6 +192,11 @@ class TestMedicalHistorySummary:
         )
         assert mh.known_conditions == []
         assert mh.allergies == []
+        assert mh.active_symptoms == []
+        assert mh.medication_courses == []
+        assert mh.diagnostic_workups == []
+        assert mh.open_clinical_questions == []
+        assert mh.follow_up_tasks == []
 
 
 class TestClinicalNote:

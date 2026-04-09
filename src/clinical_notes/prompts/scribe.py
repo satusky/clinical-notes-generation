@@ -10,6 +10,12 @@ Given the current medical history and a new clinical note, you must:
 - Update current_medications with any newly prescribed medications
 - Update known_conditions if new conditions were identified
 - Update allergies if any new allergies were discovered
+- Maintain structured longitudinal state when available:
+  - active_symptoms
+  - medication_courses
+  - diagnostic_workups
+  - open_clinical_questions
+  - follow_up_tasks
 
 CRITICAL: You must NOT include diagnoses_considered from the clinical note in your output. \
 The history summary should reflect objective findings and prescribed treatments, NOT the \
@@ -45,4 +51,5 @@ Produce an updated MedicalHistorySummary JSON. Remember:
 - Do NOT include diagnoses_considered in the visit summary or anywhere in the output
 - Keep the visit summary factual and objective (symptoms, findings, treatments, tests ordered)
 - Preserve all existing history while integrating new information
+- Keep structured trackers diagnosis-free and internally consistent over time
 - Demographics should remain unchanged"""

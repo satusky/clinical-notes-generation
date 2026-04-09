@@ -9,7 +9,15 @@ from .investigation import (
     VariableAssignment,
 )
 from .note import ClinicalNote
-from .patient import MedicalHistorySummary, PatientDemographics
+from .patient import (
+    ClinicalQuestion,
+    DiagnosticWorkup,
+    FollowUpTask,
+    MedicalHistorySummary,
+    MedicationCourse,
+    PatientDemographics,
+    SymptomState,
+)
 from .timeline import Timeline, Visit, VisitAssignment
 
 __all__ = [
@@ -25,8 +33,13 @@ __all__ = [
     "InvestigatorReport",
     "KnowledgeSource",
     "KnowledgeSourceType",
+    "ClinicalQuestion",
+    "DiagnosticWorkup",
+    "FollowUpTask",
     "MedicalHistorySummary",
+    "MedicationCourse",
     "PatientDemographics",
+    "SymptomState",
     "Timeline",
     "VariableAssignment",
     "Visit",

@@ -29,6 +29,11 @@ class CoordinatorAgent(BaseAgent):
             known_conditions=medical_history.known_conditions,
             current_medications=medical_history.current_medications,
             allergies=medical_history.allergies,
+            active_symptoms=[s.model_dump() for s in medical_history.active_symptoms],
+            medication_courses=[m.model_dump() for m in medical_history.medication_courses],
+            diagnostic_workups=[w.model_dump() for w in medical_history.diagnostic_workups],
+            open_clinical_questions=[q.model_dump() for q in medical_history.open_clinical_questions],
+            follow_up_tasks=[t.model_dump() for t in medical_history.follow_up_tasks],
         )
         self.maybe_log_prompts(logger, COORDINATOR_SYSTEM, user_prompt)
         return await generate_structured(

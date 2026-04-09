@@ -32,6 +32,11 @@ def coordinator_user_prompt(
     known_conditions: list[str],
     current_medications: list[str],
     allergies: list[str],
+    active_symptoms: list[dict],
+    medication_courses: list[dict],
+    diagnostic_workups: list[dict],
+    open_clinical_questions: list[dict],
+    follow_up_tasks: list[dict],
 ) -> str:
     summaries_str = "\n".join(
         f"  Visit {i + 1}: {s}" for i, s in enumerate(prior_visit_summaries)
@@ -53,6 +58,13 @@ Allergies: {allergies_str}
 
 Prior visit summaries:
 {summaries_str}
+
+Longitudinal context (diagnosis-free; preserve clinically useful continuity):
+- Active symptoms: {active_symptoms}
+- Medication courses: {medication_courses}
+- Diagnostic workups: {diagnostic_workups}
+- Open clinical questions: {open_clinical_questions}
+- Follow-up tasks: {follow_up_tasks}
 
 Generate a VisitAssignment JSON. You must:
 - Strip any mention of "{primary_condition}" from visit_scenario, symptoms, reason_for_visit, \
