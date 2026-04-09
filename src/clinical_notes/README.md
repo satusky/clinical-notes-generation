@@ -97,6 +97,15 @@ Each entry represents one clinical visit. Contains both the ground-truth clinica
 | `test_results` | string[] | Results available at this visit |
 | `treatments_administered` | string[] | Treatments given during visit |
 | `patient_response` | string | Response to prior treatments |
+| `visit_narrative_anchor` | string | Diagnosis-free timeline anchor for this visit |
+| `must_address_this_visit` | string[] | High-priority items expected to be addressed in this encounter |
+| `new_events_this_visit` | string[] | New symptoms/findings/events introduced at this visit |
+| `carry_forward_items` | string[] | Unresolved items carried forward from prior visits |
+| `what_changed_since_last_visit` | string[] | Explicit transitions since previous visit |
+| `test_result_certainty` | object | Map of test name → certainty (`definitive`, `suggestive`, `inconclusive`, `conflicting`) |
+| `unresolved_questions` | string[] | Open diagnostic/management questions after this visit |
+| `medication_changes` | object[] | Structured medication lifecycle events (`start/continue/adjust/hold/stop/complete`) |
+| `diagnostic_workup_updates` | object[] | Structured workup status updates (`ordered/pending/resulted/inconclusive`) |
 | `disease_progression_notes` | string | Internal disease tracking (never shown to Clinician) |
 
 ### `notes[n]` — ClinicalNote
@@ -115,6 +124,10 @@ Each entry is a clinical note written by the Clinician agent, who does not know 
 | `diagnoses_considered` | string[] | Differential diagnoses the clinician considered |
 | `medications` | string[] | Medications prescribed or continued |
 | `follow_up_recommendations` | string[] | Recommended follow-up actions |
+| `medication_actions` | object[] | Structured medication plan actions captured in the note |
+| `workup_plan_actions` | object[] | Structured workup/diagnostic plan actions captured in the note |
+| `diagnostic_uncertainty` | object[] | Differential uncertainty with confidence and rationale (`low/medium/high`) |
+| `specialty_scope_statement` | string | Explicit statement of specialty scope boundaries/referral need |
 
 ### `final_medical_history`
 
@@ -127,6 +140,11 @@ The cumulative patient record after all visits, maintained by the Scribe agent.
 | `current_medications` | string[] | Active medications after the final visit |
 | `prior_visit_summaries` | string[] | One summary string per visit |
 | `allergies` | string[] | Known allergies |
+| `active_symptoms` | object[] | Structured active symptom tracker with trend/severity/status |
+| `medication_courses` | object[] | Structured medication course tracker with status and dates |
+| `diagnostic_workups` | object[] | Structured diagnostic workup tracker with status/certainty |
+| `open_clinical_questions` | object[] | Open/resolved/deferred clinical questions |
+| `follow_up_tasks` | object[] | Pending/completed/deferred follow-up tasks |
 
 ## Notes JSONL (`notes.jsonl`)
 

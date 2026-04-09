@@ -16,12 +16,15 @@ Important note: difficult to diagnose is not the same as difficult to treat. Som
     - Reason for visit (e.g. symptoms, phenotypes, follow-ups, prescribed treatments from previous visits, etc.)
     - Rich patient state: symptoms, vitals, medications, known conditions, allergies
     - Visit scenario: a full narrative of what happens during the encounter (exam, tests, results, treatment, patient response)
+    - Continuity contract fields (`visit_narrative_anchor`, `must_address_this_visit`, `carry_forward_items`, etc.)
+    - Structured medication and workup updates (`medication_changes`, `diagnostic_workup_updates`)
+    - Structured uncertainty context (`test_result_certainty`, `unresolved_questions`)
     - Disease progression notes for internal tracking
 3. The Coordinator filters each visit's rich data, stripping diagnosis references to produce a diagnosis-free assignment for the Clinician.
-4. The clinician only receives the filtered visit assignment (including the visit scenario) and a summary medical history. They do not receive the underlying disease information.
-4. The clinician will write a note that captures the outcomes of the visit and any recommendations for future interventions, if applicable.
-5. The Scribe updates the patient's medical history summary after each visit.
-6. Runtime validators check for diagnosis leakage, note/visit alignment, and timeline consistency. Validation can run in `warn` mode (log only) or `strict` mode (raise errors).
+4. The clinician only receives the filtered visit assignment (including the visit scenario + continuity/workup context) and a summary medical history. They do not receive the underlying disease information.
+5. The clinician writes a note that captures the outcomes of the visit, uncertainty, scope boundaries, and recommendations for next interventions.
+6. The Scribe updates the patient's medical history summary after each visit, including structured longitudinal trackers.
+7. Runtime validators check leakage/alignment plus longitudinal continuity (medication lifecycle, pending workup closure, follow-up carry-through, specialty scope/uncertainty consistency). Validation can run in `warn` mode (log only) or `strict` mode (raise errors).
 
 Additional information:
 - The course of the case should follow the progress of the underlying disease or illness.
@@ -38,7 +41,7 @@ The Orchestrator generates a **visit scenario** for each visit — a narrative d
 
 The Coordinator then filters this scenario to remove diagnosis references before passing it to the Clinician. This gives the Clinician rich encounter context while maintaining the information barrier.
 
-**Information barrier**: `disease_progression_notes` on the Visit are never forwarded to the VisitAssignment or Clinician. The Coordinator explicitly strips diagnosis terms from the visit scenario, symptoms, examination findings, test results, treatments, and patient response.
+**Information barrier**: `disease_progression_notes` on the Visit are never forwarded to the VisitAssignment or Clinician. The Coordinator explicitly strips diagnosis terms from visit scenario text and structured fields (symptoms, exam findings, test results, treatments, continuity fields, and uncertainty context) before handoff.
 
 
 ## Clinical note contents
@@ -50,6 +53,8 @@ Each visit note will contain the following information:
 - Pertinent diagnostic testing/imaging
 - Prior and newly prescribed medications/therapies
 - Future care recommendations
+- Structured medication/workup actions for continuity
+- Clinician uncertainty + specialty scope statement when findings are inconclusive
 
 Notes should be formatted as follows:
 - Notes will be mostly written as free text.
@@ -61,10 +66,10 @@ Notes should be formatted as follows:
 
 The agent team will be comprised of the following roles:
 - **Narrator**: The Narrator composes the narrative of the clinical timeline.
-- **Orchestrator**: The Orchestrator builds the case timeline from the narrative with rich clinical detail. For each visit, it assigns the full patient state (symptoms, vitals, medications, conditions), plans the visit scenario (what happens during the encounter), and tracks disease progression. It maintains medical continuity across visits (e.g., medications prescribed in visit N appear in visit N+1).
-- **Scribe**: The Scribe keeps the patient medical history and updates it after each visit. It integrates new findings, medications, and test results while maintaining the information barrier (no differential diagnoses in the history).
-- **Coordinator**: The Coordinator filters rich visit data for diagnosis removal. It receives the fully detailed Visit (with visit scenario and disease progression notes) and strips all diagnosis references to produce a clean VisitAssignment for the Clinician.
-- **Clinician**: The Clinician conducts the visit and composes the clinical notes. Clinicians are given a specialization by the Coordinator based on the nature of visit (e.g. general practitioner, radiologist, oncologist, surgeon, etc.) They write from the visit scenario and assignment without knowledge of the underlying diagnosis.
+- **Orchestrator**: The Orchestrator builds the case timeline from the narrative with rich clinical detail. For each visit, it assigns the full patient state (symptoms, vitals, medications, conditions), plans the visit scenario (what happens during the encounter), and tracks disease progression. It also emits continuity contract fields and structured medication/workup updates to make visit-to-visit state explicit.
+- **Scribe**: The Scribe keeps the patient medical history and updates it after each visit. It integrates new findings, medications, and test results while maintaining the information barrier (no differential diagnoses in the history). It also maintains structured longitudinal trackers (symptoms, medication courses, workups, open questions, follow-up tasks).
+- **Coordinator**: The Coordinator filters rich visit data for diagnosis removal. It receives the fully detailed Visit (with visit scenario and disease progression notes) and strips all diagnosis references to produce a clean VisitAssignment for the Clinician, including diagnosis-free continuity context.
+- **Clinician**: The Clinician conducts the visit and composes the clinical notes. Clinicians are given a specialization by the Coordinator based on the nature of visit (e.g. general practitioner, radiologist, oncologist, surgeon, etc.). They use specialty guidance overlays, remain within specialty scope, and document uncertainty explicitly when appropriate.
 
 
 ## Pipeline flow
@@ -89,5 +94,5 @@ FOR EACH Visit:
   [SCRIBE] ──→ Updated MedicalHistorySummary
 
 FINAL:
-  [VALIDATOR] ──→ Case-level timeline and notes consistency checks
+  [VALIDATOR] ──→ Case-level consistency checks (timeline, meds/workups/follow-up/scope/uncertainty)
 ```
