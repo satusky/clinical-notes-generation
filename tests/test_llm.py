@@ -155,12 +155,12 @@ async def test_generate_structured_azure_foundry_json_schema_flag(monkeypatch):
         from src.clinical_notes.llm import generate_structured
         from src.clinical_notes.config import settings
 
-        original = settings.azure_foundry_supports_json_schema
-        settings.azure_foundry_supports_json_schema = False
+        original = settings.azure_openai_supports_json_schema
+        settings.azure_openai_supports_json_schema = False
         try:
             await generate_structured("sys", "user", SampleModel, model="azure-foundry/gpt-4o")
         finally:
-            settings.azure_foundry_supports_json_schema = original
+            settings.azure_openai_supports_json_schema = original
 
         kwargs = mock_gen.call_args[1]
         assert kwargs["supports_json_schema"] is False
@@ -317,15 +317,15 @@ def test_resolve_azure_foundry_base_url_from_resource_name():
     from src.clinical_notes.config import settings
     from src.clinical_notes.llm import _resolve_azure_foundry_base_url
 
-    original_base_url = settings.azure_foundry_base_url
-    original_resource = settings.azure_foundry_resource_name
-    settings.azure_foundry_base_url = None
-    settings.azure_foundry_resource_name = "my-foundry-resource"
+    original_base_url = settings.azure_openai_base_url
+    original_resource = settings.azure_openai_resource_name
+    settings.azure_openai_base_url = None
+    settings.azure_openai_resource_name = "my-foundry-resource"
     try:
         url = _resolve_azure_foundry_base_url()
     finally:
-        settings.azure_foundry_base_url = original_base_url
-        settings.azure_foundry_resource_name = original_resource
+        settings.azure_openai_base_url = original_base_url
+        settings.azure_openai_resource_name = original_resource
 
     assert url == "https://my-foundry-resource.openai.azure.com/openai/v1"
 
@@ -334,14 +334,14 @@ def test_resolve_azure_foundry_base_url_prefers_explicit_base_url():
     from src.clinical_notes.config import settings
     from src.clinical_notes.llm import _resolve_azure_foundry_base_url
 
-    original_base_url = settings.azure_foundry_base_url
-    original_resource = settings.azure_foundry_resource_name
-    settings.azure_foundry_base_url = "https://custom.example/v1/"
-    settings.azure_foundry_resource_name = "ignored-resource"
+    original_base_url = settings.azure_openai_base_url
+    original_resource = settings.azure_openai_resource_name
+    settings.azure_openai_base_url = "https://custom.example/v1/"
+    settings.azure_openai_resource_name = "ignored-resource"
     try:
         url = _resolve_azure_foundry_base_url()
     finally:
-        settings.azure_foundry_base_url = original_base_url
-        settings.azure_foundry_resource_name = original_resource
+        settings.azure_openai_base_url = original_base_url
+        settings.azure_openai_resource_name = original_resource
 
     assert url == "https://custom.example/v1"
