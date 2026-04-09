@@ -105,8 +105,6 @@ And set:
 - `AZURE_OPENAI_API_KEY` (or fallback to `OPENAI_API_KEY`)
 - optional: `AZURE_OPENAI_SUPPORTS_JSON_SCHEMA=true|false` (default `false`)
 
-Note: legacy `AZURE_FOUNDRY_*` variable names are still accepted for backward compatibility.
-
 Runtime validation can be configured with `VALIDATION_MODE`:
 - `warn` (default): log validation issues and continue
 - `strict`: raise on validation issues (useful for QA pipelines)

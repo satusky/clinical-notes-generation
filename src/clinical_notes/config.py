@@ -1,6 +1,5 @@
 from typing import Literal
 
-from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,26 +23,12 @@ class Settings(BaseSettings):
     # API keys
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
-    azure_openai_api_key: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("AZURE_OPENAI_API_KEY", "AZURE_FOUNDRY_API_KEY"),
-    )
+    azure_openai_api_key: str | None = None
 
     # OpenAI-compatible endpoints
-    azure_openai_base_url: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("AZURE_OPENAI_BASE_URL", "AZURE_FOUNDRY_BASE_URL"),
-    )
-    azure_openai_resource_name: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("AZURE_OPENAI_RESOURCE_NAME", "AZURE_FOUNDRY_RESOURCE_NAME"),
-    )
-    azure_openai_supports_json_schema: bool = Field(
-        default=False,
-        validation_alias=AliasChoices(
-            "AZURE_OPENAI_SUPPORTS_JSON_SCHEMA", "AZURE_FOUNDRY_SUPPORTS_JSON_SCHEMA"
-        ),
-    )
+    azure_openai_base_url: str | None = None
+    azure_openai_resource_name: str | None = None
+    azure_openai_supports_json_schema: bool = False
 
     # Local model endpoints
     ollama_base_url: str = "http://localhost:11434/v1"
