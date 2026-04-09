@@ -79,6 +79,11 @@ class TestVisit:
         assert v.treatments_administered == []
         assert v.patient_response == ""
         assert v.disease_progression_notes == ""
+        assert v.visit_narrative_anchor == ""
+        assert v.must_address_this_visit == []
+        assert v.new_events_this_visit == []
+        assert v.carry_forward_items == []
+        assert v.what_changed_since_last_visit == []
         assert v.medication_changes == []
         assert v.diagnostic_workup_updates == []
 
@@ -104,6 +109,11 @@ class TestVisit:
             treatments_administered=["Aspirin 325mg", "Nitroglycerin SL"],
             patient_response="Pain improved with nitroglycerin",
             disease_progression_notes="Progressing coronary artery disease with worsening angina",
+            visit_narrative_anchor="Second cardiology visit after ER chest pain evaluation.",
+            must_address_this_visit=["Review troponin trend", "Reconcile antiplatelet therapy"],
+            new_events_this_visit=["No recurrent chest pain episodes"],
+            carry_forward_items=["Clarify ischemic burden"],
+            what_changed_since_last_visit=["Started daily aspirin"],
             medication_changes=[
                 {
                     "action": "start",
@@ -126,6 +136,7 @@ class TestVisit:
         assert v.vitals["BP"] == "140/90"
         assert len(v.examination_findings) == 2
         assert v.disease_progression_notes != ""
+        assert v.must_address_this_visit[0] == "Review troponin trend"
         assert v.medication_changes[0].action == "start"
         assert v.diagnostic_workup_updates[0].status == "ordered"
 
@@ -169,6 +180,11 @@ class TestVisitAssignment:
         assert va.test_results == []
         assert va.treatments_administered == []
         assert va.patient_response == ""
+        assert va.visit_narrative_anchor == ""
+        assert va.must_address_this_visit == []
+        assert va.new_events_this_visit == []
+        assert va.carry_forward_items == []
+        assert va.what_changed_since_last_visit == []
         assert va.medication_changes == []
         assert va.diagnostic_workup_updates == []
 
@@ -190,6 +206,11 @@ class TestVisitAssignment:
             test_results=["Troponin negative"],
             treatments_administered=["Aspirin 81mg daily"],
             patient_response="Chest pain resolved since ER visit",
+            visit_narrative_anchor="Cardiology follow-up after initial emergency evaluation.",
+            must_address_this_visit=["Review follow-up labs"],
+            new_events_this_visit=["Symptoms improved"],
+            carry_forward_items=["Monitor exertional symptoms"],
+            what_changed_since_last_visit=["Continued aspirin"],
             medication_changes=[
                 {
                     "action": "continue",
@@ -212,6 +233,7 @@ class TestVisitAssignment:
         assert len(va.examination_findings) == 1
         assert len(va.test_results) == 1
         assert va.patient_response != ""
+        assert va.carry_forward_items[0] == "Monitor exertional symptoms"
         assert va.medication_changes[0].action == "continue"
         assert va.diagnostic_workup_updates[0].status == "resulted"
 

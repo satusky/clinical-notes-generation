@@ -73,6 +73,11 @@ class Visit(BaseModel):
     )
 
     # Structured longitudinal continuity fields
+    visit_narrative_anchor: str = Field(default="")
+    must_address_this_visit: list[str] = Field(default_factory=list)
+    new_events_this_visit: list[str] = Field(default_factory=list)
+    carry_forward_items: list[str] = Field(default_factory=list)
+    what_changed_since_last_visit: list[str] = Field(default_factory=list)
     medication_changes: list[MedicationChange] = Field(default_factory=list)
     diagnostic_workup_updates: list[DiagnosticWorkupUpdate] = Field(default_factory=list)
 
@@ -108,5 +113,10 @@ class VisitAssignment(BaseModel):
     patient_response: str = Field(default="")
 
     # Structured longitudinal continuity fields
+    visit_narrative_anchor: str = Field(default="")
+    must_address_this_visit: list[str] = Field(default_factory=list)
+    new_events_this_visit: list[str] = Field(default_factory=list)
+    carry_forward_items: list[str] = Field(default_factory=list)
+    what_changed_since_last_visit: list[str] = Field(default_factory=list)
     medication_changes: list[MedicationChange] = Field(default_factory=list)
     diagnostic_workup_updates: list[DiagnosticWorkupUpdate] = Field(default_factory=list)

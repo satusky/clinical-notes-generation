@@ -11,6 +11,7 @@ Your responsibilities:
    - Patient state: symptoms, vitals, current medications, known conditions
    - Visit scenario: what happens during the encounter (exam, tests, results, treatment, patient response)
    - Examination findings, tests ordered/results, treatments administered
+   - Continuity contract fields (anchor, carry-forward items, what changed)
    - Structured medication lifecycle changes and diagnostic workup updates
    - Disease progression notes for internal tracking
 
@@ -26,6 +27,12 @@ Guidelines:
   - Conditions diagnosed in earlier visits become known_conditions in later visits
 - The visit_scenario should describe the full encounter narrative including diagnosis context
 - disease_progression_notes should track the internal disease state (diagnosis-laden, for tracking only)
+- Include continuity contract fields on every visit:
+  - visit_narrative_anchor
+  - must_address_this_visit
+  - new_events_this_visit
+  - carry_forward_items
+  - what_changed_since_last_visit
 - Track medication lifecycle transitions explicitly in medication_changes
 - Track test/workup progression explicitly in diagnostic_workup_updates
 - patient_age and patient_sex must be set on every visit
@@ -77,6 +84,11 @@ For each visit, provide:
 - test_results (results available at this visit, including from prior orders)
 - treatments_administered (treatments given during the visit)
 - patient_response (response to prior treatments)
+- visit_narrative_anchor (where this visit sits in timeline)
+- must_address_this_visit (high-priority items to close this visit)
+- new_events_this_visit (new symptoms/findings/events)
+- carry_forward_items (unresolved items from prior visits)
+- what_changed_since_last_visit (explicit state transitions)
 - medication_changes (structured start/continue/adjust/hold/stop/complete events)
 - diagnostic_workup_updates (structured ordered/pending/resulted/inconclusive updates)
 - disease_progression_notes (internal tracking of disease state — include diagnosis details)

@@ -40,6 +40,11 @@ class ClinicianAgent(BaseAgent):
             test_results=assignment.test_results,
             treatments_administered=assignment.treatments_administered,
             patient_response=assignment.patient_response,
+            visit_narrative_anchor=assignment.visit_narrative_anchor,
+            must_address_this_visit=assignment.must_address_this_visit,
+            new_events_this_visit=assignment.new_events_this_visit,
+            carry_forward_items=assignment.carry_forward_items,
+            what_changed_since_last_visit=assignment.what_changed_since_last_visit,
             medication_changes=[m.model_dump() for m in assignment.medication_changes],
             diagnostic_workup_updates=[w.model_dump() for w in assignment.diagnostic_workup_updates],
         )

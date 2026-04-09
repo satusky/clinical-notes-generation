@@ -38,6 +38,11 @@ def clinician_user_prompt(
     test_results: list[str] | None = None,
     treatments_administered: list[str] | None = None,
     patient_response: str = "",
+    visit_narrative_anchor: str = "",
+    must_address_this_visit: list[str] | None = None,
+    new_events_this_visit: list[str] | None = None,
+    carry_forward_items: list[str] | None = None,
+    what_changed_since_last_visit: list[str] | None = None,
     medication_changes: list[dict] | None = None,
     diagnostic_workup_updates: list[dict] | None = None,
 ) -> str:
@@ -59,6 +64,19 @@ def clinician_user_prompt(
         "\n".join(f"  - {t}" for t in (treatments_administered or [])) or "  None"
     )
     response_str = patient_response or "N/A"
+    anchor_str = visit_narrative_anchor or "N/A"
+    must_address_str = (
+        "\n".join(f"  - {item}" for item in (must_address_this_visit or [])) or "  None"
+    )
+    new_events_str = (
+        "\n".join(f"  - {item}" for item in (new_events_this_visit or [])) or "  None"
+    )
+    carry_forward_str = (
+        "\n".join(f"  - {item}" for item in (carry_forward_items or [])) or "  None"
+    )
+    changed_str = (
+        "\n".join(f"  - {item}" for item in (what_changed_since_last_visit or [])) or "  None"
+    )
     med_changes_str = (
         "\n".join(f"  - {m}" for m in (medication_changes or [])) or "  None"
     )
@@ -111,6 +129,21 @@ def clinician_user_prompt(
         "",
         "Patient response to prior treatments:",
         f"{response_str}",
+        "",
+        "Visit narrative anchor:",
+        f"{anchor_str}",
+        "",
+        "Must address this visit:",
+        f"{must_address_str}",
+        "",
+        "New events this visit:",
+        f"{new_events_str}",
+        "",
+        "Carry-forward unresolved items:",
+        f"{carry_forward_str}",
+        "",
+        "What changed since last visit:",
+        f"{changed_str}",
         "",
         "Medication lifecycle changes for this visit:",
         f"{med_changes_str}",
