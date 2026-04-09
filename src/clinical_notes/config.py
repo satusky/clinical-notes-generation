@@ -27,6 +27,7 @@ class Settings(BaseSettings):
 
     # OpenAI-compatible endpoints
     azure_foundry_base_url: str | None = None
+    azure_foundry_resource_name: str | None = None
     azure_foundry_supports_json_schema: bool = False
 
     # Local model endpoints

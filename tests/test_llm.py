@@ -311,3 +311,37 @@ async def test_anthropic_retry_on_failure():
     result = await _anthropic.generate(mock_client, "claude-sonnet-4-20250514", "sys", "user", 3)
     assert result == "success"
     assert mock_client.messages.create.call_count == 2
+
+
+def test_resolve_azure_foundry_base_url_from_resource_name():
+    from src.clinical_notes.config import settings
+    from src.clinical_notes.llm import _resolve_azure_foundry_base_url
+
+    original_base_url = settings.azure_foundry_base_url
+    original_resource = settings.azure_foundry_resource_name
+    settings.azure_foundry_base_url = None
+    settings.azure_foundry_resource_name = "my-foundry-resource"
+    try:
+        url = _resolve_azure_foundry_base_url()
+    finally:
+        settings.azure_foundry_base_url = original_base_url
+        settings.azure_foundry_resource_name = original_resource
+
+    assert url == "https://my-foundry-resource.openai.azure.com/openai/v1"
+
+
+def test_resolve_azure_foundry_base_url_prefers_explicit_base_url():
+    from src.clinical_notes.config import settings
+    from src.clinical_notes.llm import _resolve_azure_foundry_base_url
+
+    original_base_url = settings.azure_foundry_base_url
+    original_resource = settings.azure_foundry_resource_name
+    settings.azure_foundry_base_url = "https://custom.example/v1/"
+    settings.azure_foundry_resource_name = "ignored-resource"
+    try:
+        url = _resolve_azure_foundry_base_url()
+    finally:
+        settings.azure_foundry_base_url = original_base_url
+        settings.azure_foundry_resource_name = original_resource
+
+    assert url == "https://custom.example/v1"

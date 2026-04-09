@@ -95,8 +95,13 @@ Supports multiple LLM providers via a `provider/model` string format:
 
 Per-agent model overrides can be set via environment variables (e.g. `CONSTRUCTOR_MODEL`, `NARRATOR_MODEL`).
 
-For Azure AI Foundry OpenAI-compatible models, set:
+For Azure AI Foundry OpenAI-compatible models, set either:
 - `AZURE_FOUNDRY_BASE_URL`
+  - Example: `https://<resource>.openai.azure.com/openai/v1`
+- **or** `AZURE_FOUNDRY_RESOURCE_NAME`
+  - Example: `my-foundry-resource` (auto-builds `https://my-foundry-resource.openai.azure.com/openai/v1`)
+
+And set:
 - `AZURE_FOUNDRY_API_KEY` (or fallback to `OPENAI_API_KEY`)
 - optional: `AZURE_FOUNDRY_SUPPORTS_JSON_SCHEMA=true|false` (default `false`)
 

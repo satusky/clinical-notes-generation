@@ -26,6 +26,25 @@ _openai_clients: dict[str, AsyncOpenAI] = {}
 _anthropic_client: AsyncAnthropic | None = None
 
 
+def _resolve_azure_foundry_base_url() -> str:
+    """Resolve Azure Foundry OpenAI-compatible base URL.
+
+    Priority:
+    1) AZURE_FOUNDRY_BASE_URL
+    2) AZURE_FOUNDRY_RESOURCE_NAME (builds https://<resource>.openai.azure.com/openai/v1)
+    """
+    if settings.azure_foundry_base_url:
+        return settings.azure_foundry_base_url.rstrip("/")
+
+    resource = (settings.azure_foundry_resource_name or "").strip()
+    if resource:
+        return f"https://{resource}.openai.azure.com/openai/v1"
+
+    raise ValueError(
+        "Set AZURE_FOUNDRY_BASE_URL or AZURE_FOUNDRY_RESOURCE_NAME for azure-foundry provider"
+    )
+
+
 def _get_openai_client(provider: Provider) -> "AsyncOpenAI":
     """Get or create an AsyncOpenAI client for the given provider."""
     from openai import AsyncOpenAI
@@ -45,17 +64,13 @@ def _get_openai_client(provider: Provider) -> "AsyncOpenAI":
                 api_key="vllm",  # vLLM doesn't require a real key by default
             )
         elif provider == Provider.AZURE_FOUNDRY:
-            if not settings.azure_foundry_base_url:
-                raise ValueError(
-                    "AZURE_FOUNDRY_BASE_URL is required for azure-foundry provider"
-                )
             api_key = settings.azure_foundry_api_key or settings.openai_api_key
             if not api_key:
                 raise ValueError(
                     "Set AZURE_FOUNDRY_API_KEY (or OPENAI_API_KEY) for azure-foundry provider"
                 )
             _openai_clients[key] = AsyncOpenAI(
-                base_url=settings.azure_foundry_base_url,
+                base_url=_resolve_azure_foundry_base_url(),
                 api_key=api_key,
             )
     return _openai_clients[key]
