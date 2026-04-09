@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone
+from time import perf_counter
 
 from .agents import ClinicianAgent, CoordinatorAgent, NarratorAgent, OrchestratorAgent, ScribeAgent
 from .config import settings
@@ -31,14 +32,29 @@ class CaseRunner:
         """Run the full pipeline for a single case. Returns serializable dict."""
         cv = config.clinical_variables
 
+        case_start = perf_counter()
+
         # Step 1: Narrator generates the full disease narrative
         logger.info("Case %s: Generating narrative...", config.case_id)
+        step_start = perf_counter()
         narrative = await self.narrator.run(config)
+        logger.info(
+            "Case %s: Narrative complete in %.2fs",
+            config.case_id,
+            perf_counter() - step_start,
+        )
         config.narrative = narrative
 
         # Step 2: Orchestrator creates the visit timeline with rich clinical data
         logger.info("Case %s: Creating timeline...", config.case_id)
+        step_start = perf_counter()
         timeline = await self.orchestrator.run(config, narrative)
+        logger.info(
+            "Case %s: Timeline complete in %.2fs (%d visits)",
+            config.case_id,
+            perf_counter() - step_start,
+            len(timeline.visits),
+        )
 
         # Step 3: Initialize medical history
         medical_history = MedicalHistorySummary(
@@ -58,10 +74,17 @@ class CaseRunner:
 
             try:
                 # Coordinator filters rich visit data (has diagnosis access, strips it)
+                step_start = perf_counter()
                 assignment = await self.coordinator.run(
                     primary_condition=cv.primary_condition,
                     visit=visit,
                     medical_history=medical_history,
+                )
+                logger.info(
+                    "Case %s visit %d: Coordinator complete in %.2fs",
+                    config.case_id,
+                    visit.visit_number,
+                    perf_counter() - step_start,
                 )
 
                 self._enforce_issues(
@@ -70,7 +93,14 @@ class CaseRunner:
                 )
 
                 # Clinician writes note (no diagnosis access)
+                step_start = perf_counter()
                 note = await self.clinician.run(assignment, medical_history)
+                logger.info(
+                    "Case %s visit %d: Clinician complete in %.2fs",
+                    config.case_id,
+                    visit.visit_number,
+                    perf_counter() - step_start,
+                )
                 note.visit_number = visit.visit_number
                 note.clinician_specialty = visit.clinician_specialty
                 note.note_date = visit.visit_date
@@ -85,7 +115,14 @@ class CaseRunner:
                 notes.append(note)
 
                 # Scribe updates medical history for subsequent visits
+                step_start = perf_counter()
                 medical_history = await self.scribe.run(medical_history, note, visit)
+                logger.info(
+                    "Case %s visit %d: Scribe complete in %.2fs",
+                    config.case_id,
+                    visit.visit_number,
+                    perf_counter() - step_start,
+                )
             except Exception:
                 logger.error(
                     "Case %s: Failed on visit %d/%d. Partial progress saved.",
@@ -101,7 +138,12 @@ class CaseRunner:
         # All visits complete — remove partial file
         remove_partial(config.case_id, output_dir)
 
-        logger.info("Case %s: Complete (%d visits)", config.case_id, len(notes))
+        logger.info(
+            "Case %s: Complete (%d visits) in %.2fs",
+            config.case_id,
+            len(notes),
+            perf_counter() - case_start,
+        )
 
         case = _serialize_case(config, timeline, notes, medical_history)
         self._enforce_issues(
