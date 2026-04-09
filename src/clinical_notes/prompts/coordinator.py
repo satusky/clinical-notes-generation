@@ -13,7 +13,8 @@ The clinician should discover findings through clinical reasoning, not be told t
 
 Your filtering responsibilities:
 - Strip diagnosis references from: visit_scenario, symptoms, reason_for_visit, \
-examination_findings, test_results, treatments_administered, patient_response, relevant_history
+examination_findings, test_results, treatments_administered, patient_response, relevant_history, \
+medication_changes, diagnostic_workup_updates
 - Drop disease_progression_notes entirely (not included on VisitAssignment)
 - Pass through demographics, history, medications, allergies from medical history
 - Preserve clinically useful information while removing diagnostic conclusions
@@ -73,4 +74,5 @@ examination_findings, test_results, treatments_administered, patient_response, r
 - Include: visit_number, visit_date, clinician_specialty, reason_for_visit, patient_age, \
 patient_sex, symptoms, relevant_history, vitals, known_conditions, current_medications, \
 prior_visit_summaries, allergies, visit_scenario, examination_findings, tests_ordered, \
-test_results, treatments_administered, patient_response"""
+test_results, treatments_administered, patient_response, medication_changes, \
+diagnostic_workup_updates"""

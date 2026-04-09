@@ -1,6 +1,30 @@
 from pydantic import BaseModel, Field
 
 
+class MedicationChange(BaseModel):
+    action: str = Field(description="start | continue | adjust | hold | stop | complete")
+    medication: str
+    dose: str | None = None
+    frequency: str | None = None
+    indication: str | None = None
+    effective_date: str | None = None
+    planned_duration: str | None = None
+    planned_end_date: str | None = None
+    stop_reason: str | None = None
+    response: str | None = None
+    side_effects: list[str] = Field(default_factory=list)
+
+
+class DiagnosticWorkupUpdate(BaseModel):
+    test_name: str
+    status: str = Field(description="ordered | pending | resulted | inconclusive")
+    certainty: str | None = Field(
+        default=None, description="definitive | suggestive | inconclusive | conflicting"
+    )
+    key_finding: str | None = None
+    next_step: str | None = None
+
+
 class Visit(BaseModel):
     visit_number: int = Field(ge=1)
     visit_date: str = Field(description="Date of the visit (YYYY-MM-DD)")
@@ -48,6 +72,10 @@ class Visit(BaseModel):
         description="Internal disease state tracking (diagnosis-laden, never sent to Clinician)",
     )
 
+    # Structured longitudinal continuity fields
+    medication_changes: list[MedicationChange] = Field(default_factory=list)
+    diagnostic_workup_updates: list[DiagnosticWorkupUpdate] = Field(default_factory=list)
+
 
 class Timeline(BaseModel):
     case_id: str
@@ -78,3 +106,7 @@ class VisitAssignment(BaseModel):
     test_results: list[str] = Field(default_factory=list)
     treatments_administered: list[str] = Field(default_factory=list)
     patient_response: str = Field(default="")
+
+    # Structured longitudinal continuity fields
+    medication_changes: list[MedicationChange] = Field(default_factory=list)
+    diagnostic_workup_updates: list[DiagnosticWorkupUpdate] = Field(default_factory=list)

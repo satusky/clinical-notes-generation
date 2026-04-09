@@ -38,6 +38,8 @@ def clinician_user_prompt(
     test_results: list[str] | None = None,
     treatments_administered: list[str] | None = None,
     patient_response: str = "",
+    medication_changes: list[dict] | None = None,
+    diagnostic_workup_updates: list[dict] | None = None,
 ) -> str:
     symptoms_str = "\n".join(f"  - {s}" for s in symptoms) or "  None reported"
     history_str = "\n".join(f"  - {h}" for h in relevant_history) or "  None"
@@ -57,6 +59,12 @@ def clinician_user_prompt(
         "\n".join(f"  - {t}" for t in (treatments_administered or [])) or "  None"
     )
     response_str = patient_response or "N/A"
+    med_changes_str = (
+        "\n".join(f"  - {m}" for m in (medication_changes or [])) or "  None"
+    )
+    workup_updates_str = (
+        "\n".join(f"  - {w}" for w in (diagnostic_workup_updates or [])) or "  None"
+    )
 
     parts = [
         "Write a clinical note for this encounter.",
@@ -104,12 +112,19 @@ def clinician_user_prompt(
         "Patient response to prior treatments:",
         f"{response_str}",
         "",
+        "Medication lifecycle changes for this visit:",
+        f"{med_changes_str}",
+        "",
+        "Diagnostic workup updates for this visit:",
+        f"{workup_updates_str}",
+        "",
         "Prior visit summaries:",
         f"{summaries_str}",
         "",
         "Write a complete clinical note including your assessment and plan. Respond with a JSON object "
         "containing: content (the full note text), symptoms_reported, vitals, tests_ordered, "
-        "diagnoses_considered, medications, and follow_up_recommendations.",
+        "diagnoses_considered, medications, follow_up_recommendations, medication_actions, "
+        "and workup_plan_actions.",
     ])
 
     return "\n".join(parts)

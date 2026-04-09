@@ -79,6 +79,8 @@ class TestVisit:
         assert v.treatments_administered == []
         assert v.patient_response == ""
         assert v.disease_progression_notes == ""
+        assert v.medication_changes == []
+        assert v.diagnostic_workup_updates == []
 
     def test_rich(self):
         v = Visit(
@@ -102,12 +104,30 @@ class TestVisit:
             treatments_administered=["Aspirin 325mg", "Nitroglycerin SL"],
             patient_response="Pain improved with nitroglycerin",
             disease_progression_notes="Progressing coronary artery disease with worsening angina",
+            medication_changes=[
+                {
+                    "action": "start",
+                    "medication": "Aspirin",
+                    "dose": "81mg",
+                    "frequency": "daily",
+                    "indication": "chest pain prevention",
+                }
+            ],
+            diagnostic_workup_updates=[
+                {
+                    "test_name": "Troponin",
+                    "status": "ordered",
+                    "next_step": "Follow serial troponin",
+                }
+            ],
         )
         assert v.patient_age == 55
         assert len(v.symptoms) == 2
         assert v.vitals["BP"] == "140/90"
         assert len(v.examination_findings) == 2
         assert v.disease_progression_notes != ""
+        assert v.medication_changes[0].action == "start"
+        assert v.diagnostic_workup_updates[0].status == "ordered"
 
     def test_invalid_visit_number(self):
         with pytest.raises(ValidationError):
@@ -149,6 +169,8 @@ class TestVisitAssignment:
         assert va.test_results == []
         assert va.treatments_administered == []
         assert va.patient_response == ""
+        assert va.medication_changes == []
+        assert va.diagnostic_workup_updates == []
 
     def test_with_history_fields(self):
         va = VisitAssignment(
@@ -168,6 +190,19 @@ class TestVisitAssignment:
             test_results=["Troponin negative"],
             treatments_administered=["Aspirin 81mg daily"],
             patient_response="Chest pain resolved since ER visit",
+            medication_changes=[
+                {
+                    "action": "continue",
+                    "medication": "Aspirin",
+                }
+            ],
+            diagnostic_workup_updates=[
+                {
+                    "test_name": "Troponin",
+                    "status": "resulted",
+                    "key_finding": "Negative",
+                }
+            ],
         )
         assert len(va.known_conditions) == 2
         assert "Lisinopril 10mg" in va.current_medications
@@ -177,6 +212,8 @@ class TestVisitAssignment:
         assert len(va.examination_findings) == 1
         assert len(va.test_results) == 1
         assert va.patient_response != ""
+        assert va.medication_changes[0].action == "continue"
+        assert va.diagnostic_workup_updates[0].status == "resulted"
 
 
 class TestPatientDemographics:
@@ -209,3 +246,5 @@ class TestClinicalNote:
         )
         assert note.tests_ordered == []
         assert note.medications == []
+        assert note.medication_actions == []
+        assert note.workup_plan_actions == []

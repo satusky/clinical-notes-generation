@@ -8,7 +8,7 @@ from .investigation import (
     KnowledgeSourceType,
     VariableAssignment,
 )
-from .note import ClinicalNote
+from .note import ClinicalNote, MedicationAction, WorkupPlanAction
 from .patient import (
     ClinicalQuestion,
     DiagnosticWorkup,
@@ -18,7 +18,7 @@ from .patient import (
     PatientDemographics,
     SymptomState,
 )
-from .timeline import Timeline, Visit, VisitAssignment
+from .timeline import DiagnosticWorkupUpdate, MedicationChange, Timeline, Visit, VisitAssignment
 
 __all__ = [
     "CaseConfig",
@@ -37,6 +37,8 @@ __all__ = [
     "DiagnosticWorkup",
     "FollowUpTask",
     "MedicalHistorySummary",
+    "MedicationAction",
+    "MedicationChange",
     "MedicationCourse",
     "PatientDemographics",
     "SymptomState",
@@ -44,4 +46,6 @@ __all__ = [
     "VariableAssignment",
     "Visit",
     "VisitAssignment",
+    "DiagnosticWorkupUpdate",
+    "WorkupPlanAction",
 ]
