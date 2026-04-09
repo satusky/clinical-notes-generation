@@ -10,6 +10,9 @@ Your narrative should:
 - Match the intended outcome (resolved, improving, worsening, or undiagnosed)
 - Be medically accurate and plausible
 - Include enough detail that a timeline of clinical visits can be derived from it
+    - Include elapsed time between narrative events
+    - Maintain realistic elapsed time between visits, procedures, recovery milestones, \
+surveillance imaging, etc.
 
 Do NOT write clinical notes — write a narrative story of the disease course.
 """

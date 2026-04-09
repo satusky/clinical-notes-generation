@@ -1,6 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
+from src.clinical_notes.models.case import CaseOutcome, CaseType, Difficulty
 from src.clinical_notes.models.investigation import (
     CaseSeed,
     Confidence,
@@ -45,9 +46,9 @@ class TestCaseSeed:
         assert seed.coding_system is None
         assert seed.age is None
         assert seed.sex is None
-        assert seed.difficulty == "medium"
-        assert seed.case_type == "acute"
-        assert seed.intended_outcome == "resolved"
+        assert seed.difficulty == Difficulty.MEDIUM
+        assert seed.case_type == CaseType.ACUTE
+        assert seed.intended_outcome == CaseOutcome.RESOLVED
         assert seed.knowledge_sources == []
 
     def test_full(self):
@@ -73,12 +74,23 @@ class TestCaseSeed:
         assert seed.age == 65
         assert seed.sex == "M"
         assert seed.coding_system == "NAACCR"
+        assert seed.difficulty == Difficulty.HARD
+        assert seed.case_type == CaseType.CHRONIC
+        assert seed.intended_outcome == CaseOutcome.WORSENING
         assert len(seed.raw_variables) == 3
         assert len(seed.knowledge_sources) == 1
 
     def test_invalid_age(self):
         with pytest.raises(ValidationError):
             CaseSeed(raw_variables={"Primary Site": "C34.1"}, age=200)
+
+    def test_invalid_enums(self):
+        with pytest.raises(ValidationError):
+            CaseSeed(raw_variables={"Primary Site": "C34.1"}, difficulty="very-hard")
+        with pytest.raises(ValidationError):
+            CaseSeed(raw_variables={"Primary Site": "C34.1"}, case_type="subacute")
+        with pytest.raises(ValidationError):
+            CaseSeed(raw_variables={"Primary Site": "C34.1"}, intended_outcome="stable")
 
 
 class TestVariableAssignment:

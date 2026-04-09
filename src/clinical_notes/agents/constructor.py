@@ -3,7 +3,7 @@ import logging
 import uuid
 
 from ..llm import generate_structured
-from ..models.case import CaseConfig, CaseOutcome, CaseType, Difficulty
+from ..models.case import CaseConfig
 from ..models.investigation import CaseSeed, InvestigationPlan, InvestigatorReport
 from ..prompts.constructor import (
     CONSTRUCTOR_MERGE_SYSTEM,
@@ -79,9 +79,9 @@ class ConstructorAgent(BaseAgent):
         # Set case_id and ensure seed constraints are respected
         config.case_id = str(uuid.uuid4())[:8]
         logger.info("Case constructed: case_id=%s", config.case_id)
-        config.difficulty = Difficulty(seed.difficulty)
-        config.case_type = CaseType(seed.case_type)
-        config.intended_outcome = CaseOutcome(seed.intended_outcome)
+        config.difficulty = seed.difficulty
+        config.case_type = seed.case_type
+        config.intended_outcome = seed.intended_outcome
 
         # Use seed demographics if provided, otherwise use plan suggestions
         if seed.age is not None:

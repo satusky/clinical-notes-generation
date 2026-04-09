@@ -2,6 +2,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
+from .case import CaseOutcome, CaseType, Difficulty
+
 
 class KnowledgeSourceType(StrEnum):
     WEB_URL = "web_url"
@@ -26,9 +28,12 @@ class CaseSeed(BaseModel):
     )
     age: int | None = Field(default=None, ge=18, le=100, description="Patient age (optional)")
     sex: str | None = Field(default=None, description="Patient sex M/F (optional)")
-    difficulty: str = Field(default="medium", description="easy, medium, or hard")
-    case_type: str = Field(default="acute", description="acute or chronic")
-    intended_outcome: str = Field(default="resolved", description="resolved/improving/worsening/undiagnosed")
+    difficulty: Difficulty = Field(default=Difficulty.MEDIUM, description="easy, medium, or hard")
+    case_type: CaseType = Field(default=CaseType.ACUTE, description="acute or chronic")
+    intended_outcome: CaseOutcome = Field(
+        default=CaseOutcome.RESOLVED,
+        description="resolved/improving/worsening/undiagnosed",
+    )
     knowledge_sources: list[KnowledgeSource] = Field(
         default_factory=list, description="Optional knowledge sources for investigation"
     )
