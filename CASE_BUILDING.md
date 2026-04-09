@@ -50,11 +50,12 @@ uv run python scripts/build_case.py \
   --source /path/to/naaccr_docs/ \
   --difficulty hard \
   --case-type chronic \
-  --outcome worsening
+  --intended-outcome worsening
 ```
 
-If `--difficulty`, `--case-type`, or `--outcome` are omitted, the CLI samples them randomly.
+If `--difficulty`, `--case-type`, or `--intended-outcome` are omitted, the CLI samples them randomly.
 For reproducible sampling, pass `--seed <int>` or set `CASE_RANDOM_SEED`.
+`--outcome` remains supported as a backward-compatible alias.
 
 Or using a variables file:
 

@@ -43,16 +43,25 @@ uv run python scripts/build_case.py \
   --source /path/to/naaccr_docs/ \
   --difficulty hard \
   --case-type chronic \
-  --outcome worsening
+  --intended-outcome worsening
 ```
 
-Optional flags: `--age`, `--sex`, `--variables-file` (JSON dict), `--source` (repeatable — accepts URLs or file/directory paths), `--output`, `--seed` (reproducible random defaults for difficulty/case-type/outcome when omitted). You can also set `CASE_RANDOM_SEED`.
+Optional flags: `--age`, `--sex`, `--variables-file` (JSON dict), `--source` (repeatable — accepts URLs or file/directory paths), `--output`, `--seed` (reproducible random defaults for difficulty/case-type/intended-outcome when omitted). You can also set `CASE_RANDOM_SEED`.
+`--outcome` is kept as a backward-compatible alias of `--intended-outcome`.
 
 ### Generate clinical notes from a seed file
 
 ```bash
 uv run python scripts/generate.py --seed-file seed.json
 ```
+
+You can also run a directory of seeds:
+
+```bash
+uv run python scripts/generate.py --seed-dir seeds/
+```
+
+Note: `--seed-file` and `--seed-dir` are mutually exclusive.
 
 ### Generate clinical notes from the built-in example case
 
@@ -88,6 +97,9 @@ Per-agent model overrides can be set via environment variables (e.g. `CONSTRUCTO
 Runtime validation can be configured with `VALIDATION_MODE`:
 - `warn` (default): log validation issues and continue
 - `strict`: raise on validation issues (useful for QA pipelines)
+
+Prompt logging can be enabled with `LOG_PROMPTS=true` (off by default).
+Generated case outputs include `generation_metadata` with per-agent model and prompt version.
 
 ## Development
 

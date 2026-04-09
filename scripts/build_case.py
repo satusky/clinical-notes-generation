@@ -63,14 +63,22 @@ def _parse_var(value: str) -> tuple[str, str]:
     return parts[0].strip(), parts[1].strip()
 
 
-SEED_FIELDS = {"difficulty", "case_type", "outcome", "age", "sex", "coding_system"}
+SEED_FIELDS = {
+    "difficulty",
+    "case_type",
+    "intended_outcome",
+    "outcome",  # backward-compatible alias
+    "age",
+    "sex",
+    "coding_system",
+}
 
 
 def load_seed_file(path: Path) -> list[dict]:
     """Load a JSONL file where each line provides CaseSeed fields directly.
 
-    Known CaseSeed fields (difficulty, case_type, outcome, age, sex, coding_system)
-    are extracted; all remaining keys go into raw_variables.
+    Known CaseSeed fields (difficulty, case_type, intended_outcome/outcome, age,
+    sex, coding_system) are extracted; all remaining keys go into raw_variables.
     Lines may have trailing commas (tolerant parsing).
     """
     entries: list[dict] = []
@@ -82,7 +90,8 @@ def load_seed_file(path: Path) -> list[dict]:
         entry: dict = {"raw_variables": {}}
         for key, val in obj.items():
             if key in SEED_FIELDS:
-                entry[key] = val
+                normalized_key = "intended_outcome" if key == "outcome" else key
+                entry[normalized_key] = val
             else:
                 entry["raw_variables"][key] = str(val)
         entries.append(entry)
@@ -173,7 +182,7 @@ async def run(args: argparse.Namespace):
                 sex=entry.get("sex") or args.sex,
                 difficulty=entry.get("difficulty") or args.difficulty or _random_choice(rng, "easy", "medium", "hard"),
                 case_type=entry.get("case_type") or args.case_type or _random_choice(rng, "acute", "chronic"),
-                intended_outcome=entry.get("outcome") or args.outcome or _random_choice(rng, "resolved", "improving", "worsening", "undiagnosed"),
+                intended_outcome=entry.get("intended_outcome") or args.intended_outcome or _random_choice(rng, "resolved", "improving", "worsening", "undiagnosed"),
                 knowledge_sources=sources,
             )
             seeds.append(seed)
@@ -181,7 +190,7 @@ async def run(args: argparse.Namespace):
         case_list = get_variables(args)
         difficulty = args.difficulty or _random_choice(rng, "easy", "medium", "hard")
         case_type = args.case_type or _random_choice(rng, "acute", "chronic")
-        outcome = args.outcome or _random_choice(rng, "resolved", "improving", "worsening", "undiagnosed")
+        outcome = args.intended_outcome or _random_choice(rng, "resolved", "improving", "worsening", "undiagnosed")
         seeds = [
             CaseSeed(
                 raw_variables=raw_variables,
@@ -227,13 +236,13 @@ def main():
     parser.add_argument("--sex", default=None, help="Patient sex (M/F)")
     parser.add_argument("--difficulty", "-d", default=None, choices=["easy", "medium", "hard"])
     parser.add_argument("--case-type", default=None, choices=["acute", "chronic"])
-    parser.add_argument("--outcome", default=None,
+    parser.add_argument("--intended-outcome", "--outcome", dest="intended_outcome", default=None,
                         choices=["resolved", "improving", "worsening", "undiagnosed"])
     parser.add_argument("--seed", type=int, default=None,
                         help="Seed for reproducible random selection of difficulty/case-type/outcome")
     parser.add_argument("--source", "-s", action="append", help="Knowledge source (URL or path)")
     parser.add_argument("--seed-file", default=None,
-                        help="JSONL file with CaseSeed fields per line (disease, difficulty, case_type, outcome, etc.)")
+                        help="JSONL file with CaseSeed fields per line (disease, difficulty, case_type, intended_outcome, etc.)")
     parser.add_argument("--patients-csv", default=None,
                         help="CSV file with NAACCR variable IDs as columns, one patient per row")
     parser.add_argument("--row", type=int, default=None,

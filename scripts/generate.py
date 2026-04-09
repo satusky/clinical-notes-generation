@@ -5,8 +5,7 @@ import asyncio
 import logging
 import sys
 import uuid
-import os
-import glob
+from pathlib import Path
 
 from src.clinical_notes.case_runner import CaseRunner
 from src.clinical_notes.config import settings
@@ -57,7 +56,6 @@ async def run(seed_file: str | None = None, output: str | None = None):
     if seed_file:
         # Build a CaseConfig from a seed file via the case-building pipeline
         import json
-        from pathlib import Path
 
         from src.clinical_notes.case_builder import CaseBuilder
         from src.clinical_notes.models.investigation import CaseSeed
@@ -81,24 +79,49 @@ async def run(seed_file: str | None = None, output: str | None = None):
     print(f"Case {case['case_id']} generated with {len(case['notes'])} notes.")
 
 
+def resolve_seed_files(seed_file: str | None, seed_dir: str | None) -> list[str | None]:
+    """Resolve input mode into concrete seed files (or [None] for example case)."""
+    if seed_file and seed_dir:
+        raise ValueError("Provide either --seed-file or --seed-dir, not both")
+
+    if seed_dir:
+        directory = Path(seed_dir)
+        if not directory.is_dir():
+            raise FileNotFoundError(f"Seed directory not found: {seed_dir}")
+        files = sorted(str(path) for path in directory.glob("*_seed*.json"))
+        if not files:
+            raise FileNotFoundError(f"No seed files matching '*_seed*.json' found in {seed_dir}")
+        return files
+
+    if seed_file:
+        path = Path(seed_file)
+        if not path.is_file():
+            raise FileNotFoundError(f"Seed file not found: {seed_file}")
+        return [str(path)]
+
+    return [None]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate synthetic clinical notes")
     parser.add_argument("--output", "-o", default=None, help="Output directory")
     parser.add_argument("--seed-file", default=None,
-                        help="Path to a JSON file containing CaseSeed fields")
+                        help="Path to a JSON file containing CaseSeed/CaseConfig fields")
     parser.add_argument("--seed-dir", default=None,
                         help="Path to a directory containing seed files")
     args = parser.parse_args()
-    output_dir = args.output
 
-    if args.seed_dir is not None:
-        seed_files = glob.glob(os.path.join(args.seed_dir, "*_seed*.json"))
-    else:
-        seed_files = [args.seed_file]
-    
+    try:
+        seed_files = resolve_seed_files(args.seed_file, args.seed_dir)
+    except (ValueError, FileNotFoundError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
     for seed_file in seed_files:
-        asyncio.run(run(seed_file, output_dir))
+        asyncio.run(run(seed_file, args.output))
+
+    return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main() or 0)
+    sys.exit(main())
