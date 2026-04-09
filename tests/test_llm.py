@@ -30,6 +30,11 @@ class TestParseModel:
         assert provider == Provider.VLLM
         assert name == "mistral-7b"
 
+    def test_azure_foundry(self):
+        provider, name = parse_model("azure-foundry/gpt-4o")
+        assert provider == Provider.AZURE_FOUNDRY
+        assert name == "gpt-4o"
+
     def test_unknown_prefix(self):
         with pytest.raises(ValueError, match="Unknown provider prefix 'foo'"):
             parse_model("foo/bar")
@@ -134,6 +139,29 @@ async def test_generate_structured_ollama_no_json_schema():
 
         await generate_structured("sys", "user", SampleModel, model="ollama/llama3")
         # Should pass supports_json_schema=False for Ollama
+        kwargs = mock_gen.call_args[1]
+        assert kwargs["supports_json_schema"] is False
+
+
+@pytest.mark.asyncio
+async def test_generate_structured_azure_foundry_json_schema_flag(monkeypatch):
+    with (
+        patch(
+            "src.clinical_notes.llm._openai.generate_structured", new_callable=AsyncMock
+        ) as mock_gen,
+        patch("src.clinical_notes.llm._get_openai_client"),
+    ):
+        mock_gen.return_value = SampleModel(name="test", value=1)
+        from src.clinical_notes.llm import generate_structured
+        from src.clinical_notes.config import settings
+
+        original = settings.azure_foundry_supports_json_schema
+        settings.azure_foundry_supports_json_schema = False
+        try:
+            await generate_structured("sys", "user", SampleModel, model="azure-foundry/gpt-4o")
+        finally:
+            settings.azure_foundry_supports_json_schema = original
+
         kwargs = mock_gen.call_args[1]
         assert kwargs["supports_json_schema"] is False
 

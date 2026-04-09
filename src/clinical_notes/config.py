@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     # API keys
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
+    azure_foundry_api_key: str | None = None
+
+    # OpenAI-compatible endpoints
+    azure_foundry_base_url: str | None = None
+    azure_foundry_supports_json_schema: bool = False
 
     # Local model endpoints
     ollama_base_url: str = "http://localhost:11434/v1"

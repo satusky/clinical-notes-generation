@@ -1,6 +1,6 @@
 """LLM abstraction layer with native OpenAI and Anthropic SDK support.
 
-Supports providers: openai/, anthropic/, ollama/, vllm/
+Supports providers: openai/, anthropic/, ollama/, vllm/, azure-foundry/
 """
 
 from __future__ import annotations
@@ -43,6 +43,20 @@ def _get_openai_client(provider: Provider) -> "AsyncOpenAI":
             _openai_clients[key] = AsyncOpenAI(
                 base_url=settings.vllm_base_url,
                 api_key="vllm",  # vLLM doesn't require a real key by default
+            )
+        elif provider == Provider.AZURE_FOUNDRY:
+            if not settings.azure_foundry_base_url:
+                raise ValueError(
+                    "AZURE_FOUNDRY_BASE_URL is required for azure-foundry provider"
+                )
+            api_key = settings.azure_foundry_api_key or settings.openai_api_key
+            if not api_key:
+                raise ValueError(
+                    "Set AZURE_FOUNDRY_API_KEY (or OPENAI_API_KEY) for azure-foundry provider"
+                )
+            _openai_clients[key] = AsyncOpenAI(
+                base_url=settings.azure_foundry_base_url,
+                api_key=api_key,
             )
     return _openai_clients[key]
 
@@ -104,6 +118,8 @@ async def generate_structured(
 
         client = _get_openai_client(provider)
         supports_json_schema = provider != Provider.OLLAMA
+        if provider == Provider.AZURE_FOUNDRY:
+            supports_json_schema = settings.azure_foundry_supports_json_schema
         return await _openai.generate_structured(
             client,
             model_name,

@@ -89,10 +89,16 @@ Supports multiple LLM providers via a `provider/model` string format:
 
 - `anthropic/claude-sonnet-4-20250514` (default)
 - `openai/gpt-4o`
+- `azure-foundry/gpt-4o` (OpenAI-compatible endpoint)
 - `ollama/llama3`
 - `vllm/model-name`
 
 Per-agent model overrides can be set via environment variables (e.g. `CONSTRUCTOR_MODEL`, `NARRATOR_MODEL`).
+
+For Azure AI Foundry OpenAI-compatible models, set:
+- `AZURE_FOUNDRY_BASE_URL`
+- `AZURE_FOUNDRY_API_KEY` (or fallback to `OPENAI_API_KEY`)
+- optional: `AZURE_FOUNDRY_SUPPORTS_JSON_SCHEMA=true|false` (default `false`)
 
 Runtime validation can be configured with `VALIDATION_MODE`:
 - `warn` (default): log validation issues and continue

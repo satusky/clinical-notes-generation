@@ -6,6 +6,7 @@ class Provider(Enum):
     ANTHROPIC = "anthropic"
     OLLAMA = "ollama"
     VLLM = "vllm"
+    AZURE_FOUNDRY = "azure-foundry"
 
 
 _PREFIX_MAP = {
@@ -13,6 +14,8 @@ _PREFIX_MAP = {
     "anthropic": Provider.ANTHROPIC,
     "ollama": Provider.OLLAMA,
     "vllm": Provider.VLLM,
+    "azure-foundry": Provider.AZURE_FOUNDRY,
+    "azure_foundry": Provider.AZURE_FOUNDRY,
 }
 
 
